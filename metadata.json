@@ -1,0 +1,8 @@
+{
+  "name": "Language Spoken House",
+  "description": "Live online English speaking and AI courses for kids and women. Small batches, Urdu and English guidance, and a free trial class.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

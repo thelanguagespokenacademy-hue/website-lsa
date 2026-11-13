@@ -1,0 +1,185 @@
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, House, MessageCircle, PanelLeft } from 'lucide-react';
+import { Link, usePathname } from '../lib/router';
+import { Button } from './ui/Button';
+import { NavDrawer } from './ui/Modal';
+import { EMAIL_URL, ROUTE_META, WHATSAPP_URL } from '../data/siteData';
+
+const HEADER_NAV_ITEMS = [
+  { to: '/programs', label: 'Programs' },
+  { to: '/about', label: 'Our difference' },
+  { to: '/stories', label: 'Stories' },
+  { to: '/teachers', label: 'Teachers' },
+];
+
+export function SiteHeader() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const pathname = usePathname();
+
+  return (
+    <>
+      <header className="site-header">
+        <div className="shell header-inner">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Open menu"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <PanelLeft />
+            </Button>
+            <Link to="/" className="brand">
+              <span className="brand-icon">
+                <House size={19} />
+              </span>
+              <span>Language Spoken House</span>
+            </Link>
+          </div>
+
+          <nav className="main-nav" aria-label="Main navigation">
+            {HEADER_NAV_ITEMS.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={pathname === item.to ? 'nav-active' : undefined}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <Button asChild className="header-demo">
+            <Link to="/contact">Book free demo</Link>
+          </Button>
+        </div>
+      </header>
+
+      <NavDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
+    </>
+  );
+}
+
+export function FloatingWhatsAppButton() {
+  return (
+    <a
+      href={WHATSAPP_URL}
+      target="_blank"
+      rel="noreferrer"
+      className="floating-wa"
+      aria-label="Chat on WhatsApp"
+    >
+      <MessageCircle size={18} />
+      <span>Let’s have a chat!</span>
+    </a>
+  );
+}
+
+export function SiteFooter() {
+  return (
+    <footer className="footer">
+      <div className="shell">
+        <div className="footer-grid">
+          <div>
+            <Link to="/" className="brand">
+              <span className="brand-icon">
+                <House size={18} />
+              </span>
+              Language Spoken House
+            </Link>
+            <p className="mt-4">
+              The destination for practical English mastery, confident communication and AI skills
+              for kids and women worldwide.
+            </p>
+          </div>
+
+          <div>
+            <h4>Programs</h4>
+            <Link to="/kids-program">Kids English</Link>
+            <Link to="/english">Women’s Spoken</Link>
+            <Link to="/ai">AI Courses</Link>
+            <Link to="/teachers">Teacher Communication</Link>
+          </div>
+
+          <div>
+            <h4>Quick links</h4>
+            <Link to="/about">About us</Link>
+            <Link to="/stories">Student voices</Link>
+            <Link to="/certificates">Certificates</Link>
+            <Link to="/contact">Free Demo</Link>
+          </div>
+
+          <div>
+            <h4>Start a conversation</h4>
+            <p>Learn Today · Grow Tomorrow · A Brighter You</p>
+            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+              WhatsApp 0307-5882858 ↗
+            </a>
+            <a href={EMAIL_URL}>
+              Email us <ArrowUpRight className="inline" size={13} />
+            </a>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <span>© 2026 Language Spoken House. All rights reserved.</span>
+          <span>Live learning. Real confidence.</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+export function MotionAndMetaEffect() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const meta = ROUTE_META[pathname] ?? ROUTE_META['/'];
+    document.title = meta.title;
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.setAttribute('content', meta.description);
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', meta.title);
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute('content', meta.description);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      !('IntersectionObserver' in window)
+    ) {
+      return;
+    }
+
+    const targets = document.querySelectorAll(
+      'main .section-heading, main .section-intro, main .path, main .feature, main .course-card, main .ai-card, main .skill, main .step, main .cert-card, main .story, main .split > img, main .build-banner > img, main .contact-actions'
+    );
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('motion-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -24px 0px' }
+    );
+
+    targets.forEach((el) => {
+      el.classList.add('motion-reveal');
+      observer.observe(el);
+    });
+
+    return () => {
+      observer.disconnect();
+      targets.forEach((el) => {
+        el.classList.remove('motion-reveal', 'motion-visible');
+      });
+    };
+  }, [pathname]);
+
+  return null;
+}
