@@ -19,6 +19,7 @@ export const ASSETS = {
   aiWomen: asset('images/no-fees-ai-course-post-v8-1.jpg'),
   aiAdvanced: asset('images/no-fees-advanced-ai-course-online-classes-square-v2.jpg'),
   aiBanner: asset('images/no-fees-ai-course-post-v8.jpg'),
+  kidsWelcomePoster: asset('assets/aistudio/WhatsApp_Image_2026-11-13_at_9.51.22_AM_e217f483.jpeg'),
 };
 
 export interface HeroSlide {

@@ -1,4 +1,6 @@
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { Link, RouterProvider, usePathname } from './lib/router';
+import { WelcomeDemoModal } from './components/ui/Modal';
 import {
   FloatingWhatsAppButton,
   MotionAndMetaEffect,
@@ -170,9 +172,7 @@ function NotFoundPage() {
   );
 }
 
-function RouteView() {
-  const pathname = usePathname();
-
+function renderRoute(pathname: string) {
   switch (pathname) {
     case '/':
       return <HomePage />;
@@ -201,15 +201,36 @@ function RouteView() {
   }
 }
 
+function RouteView() {
+  const pathname = usePathname();
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={pathname}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {renderRoute(pathname)}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 export default function App() {
   return (
-    <RouterProvider>
-      <div className="ambient-backdrop" aria-hidden="true" />
-      <SiteHeader />
-      <RouteView />
-      <MotionAndMetaEffect />
-      <SiteFooter />
-      <FloatingWhatsAppButton />
-    </RouterProvider>
+    <MotionConfig reducedMotion="user">
+      <RouterProvider>
+        <div className="ambient-backdrop" aria-hidden="true" />
+        <SiteHeader />
+        <RouteView />
+        <MotionAndMetaEffect />
+        <SiteFooter />
+        <FloatingWhatsAppButton />
+        <WelcomeDemoModal />
+      </RouterProvider>
+    </MotionConfig>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion, useScroll, useSpring } from 'motion/react';
 import { ArrowUpRight, House, MessageCircle, PanelLeft } from 'lucide-react';
 import { Link, usePathname } from '../lib/router';
 import { Button } from './ui/Button';
@@ -15,6 +16,12 @@ const HEADER_NAV_ITEMS = [
 export function SiteHeader() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 280,
+    damping: 32,
+    restDelta: 0.001,
+  });
 
   return (
     <>
@@ -38,21 +45,33 @@ export function SiteHeader() {
           </div>
 
           <nav className="main-nav" aria-label="Main navigation">
-            {HEADER_NAV_ITEMS.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={pathname === item.to ? 'nav-active' : undefined}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {HEADER_NAV_ITEMS.map((item) => {
+              const isActive = pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={isActive ? 'nav-active' : undefined}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="header-nav-pill"
+                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                      className="nav-active-pill"
+                    />
+                  )}
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           <Button asChild className="header-demo">
             <Link to="/contact">Book free demo</Link>
           </Button>
         </div>
+
+        <motion.div className="scroll-progress-bar" style={{ scaleX }} aria-hidden="true" />
       </header>
 
       <NavDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
@@ -62,16 +81,21 @@ export function SiteHeader() {
 
 export function FloatingWhatsAppButton() {
   return (
-    <a
+    <motion.a
       href={WHATSAPP_URL}
       target="_blank"
       rel="noreferrer"
       className="floating-wa"
       aria-label="Chat on WhatsApp"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -2, scale: 1.03 }}
+      whileTap={{ scale: 0.96 }}
     >
       <MessageCircle size={18} />
       <span>Let’s have a chat!</span>
-    </a>
+    </motion.a>
   );
 }
 
@@ -142,43 +166,6 @@ export function MotionAndMetaEffect() {
     if (ogTitle) ogTitle.setAttribute('content', meta.title);
     const ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc) ogDesc.setAttribute('content', meta.description);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      !('IntersectionObserver' in window)
-    ) {
-      return;
-    }
-
-    const targets = document.querySelectorAll(
-      'main .section-heading, main .section-intro, main .path, main .feature, main .course-card, main .ai-card, main .skill, main .step, main .cert-card, main .story, main .split > img, main .build-banner > img, main .contact-actions'
-    );
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('motion-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.08, rootMargin: '0px 0px -24px 0px' }
-    );
-
-    targets.forEach((el) => {
-      el.classList.add('motion-reveal');
-      observer.observe(el);
-    });
-
-    return () => {
-      observer.disconnect();
-      targets.forEach((el) => {
-        el.classList.remove('motion-reveal', 'motion-visible');
-      });
-    };
   }, [pathname]);
 
   return null;

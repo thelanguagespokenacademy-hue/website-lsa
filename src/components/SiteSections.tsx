@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowLeft,
   ArrowRight,
   Award,
   BookOpen,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Code,
   Globe,
@@ -30,15 +33,23 @@ import {
   WHATSAPP_URL,
 } from '../data/siteData';
 
+const EASE_OUT_EXPO: [number, number, number, number] = [0.16, 1, 0.3, 1];
+const VIEWPORT_ONCE = { once: true, amount: 0.12 } as const;
+
 export function PageTitle({ title, eyebrow }: { title: string; eyebrow: string }) {
   return (
-    <div className="shell page-title">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: EASE_OUT_EXPO }}
+      className="shell page-title"
+    >
       <Link to="/">
         <ArrowLeft size={14} /> Back to the house
       </Link>
       <span className="eyebrow">{eyebrow}</span>
       <h1>{title}</h1>
-    </div>
+    </motion.div>
   );
 }
 
@@ -68,7 +79,11 @@ export function EnrollButton({
 export function HeroSlider() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
   const slide = HERO_SLIDES[index] ?? HERO_SLIDES[0];
+
+  const goNext = () => setIndex((prev) => (prev + 1) % HERO_SLIDES.length);
+  const goPrev = () => setIndex((prev) => (prev + HERO_SLIDES.length - 1) % HERO_SLIDES.length);
 
   useEffect(() => {
     if (paused) return;
@@ -89,68 +104,92 @@ export function HeroSlider() {
       id="home"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onTouchStart={(e) => {
+        touchStartX.current = e.touches[0]?.clientX ?? null;
+      }}
+      onTouchEnd={(e) => {
+        if (touchStartX.current === null) return;
+        const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
+        const delta = endX - touchStartX.current;
+        touchStartX.current = null;
+        if (Math.abs(delta) > 42) {
+          if (delta < 0) goNext();
+          else goPrev();
+        }
+      }}
     >
       <div className="hero-glow" aria-hidden="true" />
-      <img
-        key={slide.image}
-        className="hero-image"
-        src={slide.image}
-        alt="A welcoming English learning classroom"
-        referrerPolicy="no-referrer"
-      />
-      <span className="live-label">LIVE · ONLINE · SPEAKING FIRST</span>
 
-      <div className="shell hero-inner">
-        <div className="hero-copy" key={index}>
-          <span className="eyebrow">Language Spoken House</span>
-          <h1>{slide.title}</h1>
-          <p className="hero-description">{slide.text}</p>
-          <div className="hero-actions">
-            <Button size="lg" asChild>
-              <Link to="/contact">
-                Book your free demo <ArrowRight />
-              </Link>
+      <AnimatePresence mode="sync" initial={false}>
+        <motion.img
+          key={slide.image}
+          className="hero-image"
+          src={slide.image}
+          alt={slide.title}
+          referrerPolicy="no-referrer"
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 0.62, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.95, ease: EASE_OUT_EXPO }}
+        />
+      </AnimatePresence>
+
+      <div className="shell hero-shell">
+        <div className="hero-top-bar">
+          <span className="live-label">LIVE · ONLINE · SPEAKING FIRST</span>
+        </div>
+
+        <div className="hero-inner">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={index}
+              className="hero-copy"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.45, ease: EASE_OUT_EXPO }}
+            >
+              <span className="eyebrow">Language Spoken House</span>
+              <h1>{slide.title}</h1>
+              <p className="hero-description">{slide.text}</p>
+              <div className="hero-actions">
+                <Button size="lg" asChild>
+                  <Link to="/contact">
+                    Book your free demo <ArrowRight />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="hero" asChild>
+                  <Link to="/programs">View programs</Link>
+                </Button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <div className="hero-bottom">
+          <div className="hero-dots" aria-label={`Slide ${index + 1} of ${HERO_SLIDES.length}`}>
+            {HERO_SLIDES.map((s, i) => (
+              <button
+                key={s.title}
+                type="button"
+                onClick={() => setIndex(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                className={`hero-dot ${i === index ? 'active' : ''}`}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="hero-counter">
+              0{index + 1} / 0{HERO_SLIDES.length}
+            </span>
+            <Button variant="hero" size="icon" aria-label="Previous slide" onClick={goPrev}>
+              <ArrowLeft />
             </Button>
-            <Button size="lg" variant="hero" asChild>
-              <Link to="/programs">View programs</Link>
+            <Button variant="hero" size="icon" aria-label="Next slide" onClick={goNext}>
+              <ArrowRight />
             </Button>
           </div>
-        </div>
-      </div>
-
-      <div className="hero-bottom">
-        <div className="hero-dots" aria-label={`Slide ${index + 1} of ${HERO_SLIDES.length}`}>
-          {HERO_SLIDES.map((s, i) => (
-            <button
-              key={s.title}
-              type="button"
-              onClick={() => setIndex(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className={`hero-dot ${i === index ? 'active' : ''}`}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="hero-counter">
-            0{index + 1} / 0{HERO_SLIDES.length}
-          </span>
-          <Button
-            variant="hero"
-            size="icon"
-            aria-label="Previous slide"
-            onClick={() => setIndex((index + HERO_SLIDES.length - 1) % HERO_SLIDES.length)}
-          >
-            <ArrowLeft />
-          </Button>
-          <Button
-            variant="hero"
-            size="icon"
-            aria-label="Next slide"
-            onClick={() => setIndex((index + 1) % HERO_SLIDES.length)}
-          >
-            <ArrowRight />
-          </Button>
         </div>
       </div>
     </section>
@@ -169,19 +208,25 @@ export function BenefitsBar() {
   ];
 
   return (
-    <div className="benefits">
+    <motion.div
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={VIEWPORT_ONCE}
+      transition={{ duration: 0.4 }}
+      className="benefits"
+    >
       {items.map(({ Icon, text }) => (
         <span key={text}>
           <Icon />
           {text}
         </span>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
 export function ShowcaseMarquee() {
-  const [preview, setPreview] = useState<PreviewImage | null>(null);
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
 
   const tiles = [
     { title: 'Kids English Speaking', tag: 'Ages 4–14', url: ASSETS.kidsEnglish },
@@ -193,6 +238,11 @@ export function ShowcaseMarquee() {
     { title: 'Expert Trainers', tag: 'Live Feedback', url: ASSETS.teachers },
   ];
 
+  const activePreview: PreviewImage | null =
+    previewIdx !== null && tiles[previewIdx]
+      ? { name: tiles[previewIdx].title, url: tiles[previewIdx].url }
+      : null;
+
   return (
     <div className="marquee-band" aria-label="Program visual highlights">
       <div className="marquee-mask">
@@ -202,7 +252,7 @@ export function ShowcaseMarquee() {
               key={`${tile.title}-${idx}`}
               type="button"
               className="marquee-tile"
-              onClick={() => setPreview({ name: tile.title, url: tile.url })}
+              onClick={() => setPreviewIdx(idx % tiles.length)}
               aria-label={`Preview ${tile.title}`}
             >
               <img src={tile.url} alt={tile.title} loading="lazy" referrerPolicy="no-referrer" />
@@ -215,7 +265,16 @@ export function ShowcaseMarquee() {
         </div>
       </div>
 
-      <ImageDialog preview={preview} onClose={() => setPreview(null)} />
+      <ImageDialog
+        preview={activePreview}
+        onClose={() => setPreviewIdx(null)}
+        onPrev={() =>
+          setPreviewIdx((prev) => (prev === null ? null : (prev + tiles.length - 1) % tiles.length))
+        }
+        onNext={() =>
+          setPreviewIdx((prev) => (prev === null ? null : (prev + 1) % tiles.length))
+        }
+      />
     </div>
   );
 }
@@ -251,16 +310,31 @@ export function WhoAreYouSection() {
   return (
     <section className="section">
       <div className="shell">
-        <span className="eyebrow">Start where you are</span>
-        <h2 className="section-heading">Who are you here for?</h2>
-        <p className="section-intro">
-          Choose the path that fits your goal. Every class is live, practical, and built for
-          confident speaking.
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        >
+          <span className="eyebrow">Start where you are</span>
+          <h2 className="section-heading">Who are you here for?</h2>
+          <p className="section-intro">
+            Choose the path that fits your goal. Every class is live, practical, and built for
+            confident speaking.
+          </p>
+        </motion.div>
 
         <div className="path-grid mt-9">
-          {paths.map(({ index, Icon, title, text, to, cta }) => (
-            <div key={title} className="path">
+          {paths.map(({ index, Icon, title, text, to, cta }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={VIEWPORT_ONCE}
+              transition={{ duration: 0.45, delay: i * 0.08, ease: EASE_OUT_EXPO }}
+              whileHover={{ y: -4 }}
+              className="path"
+            >
               <div className="path-top">
                 <div className="path-icon-box">
                   <Icon size={20} />
@@ -272,7 +346,7 @@ export function WhoAreYouSection() {
               <Link className="text-link" to={to}>
                 {cta} <ArrowRight size={16} />
               </Link>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -299,26 +373,41 @@ export function WhySection() {
   return (
     <section className="section section-coral" id="why">
       <div className="shell">
-        <span className="eyebrow">Why Language Spoken House?</span>
-        <h2 className="section-heading">
-          We don’t just teach English.
-          <br />
-          We make you speak it.
-        </h2>
-        <p className="section-intro">
-          Speaking is not saved for the end of a lesson. It is how every lesson begins, grows, and
-          becomes useful in real life.
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        >
+          <span className="eyebrow">Why Language Spoken House?</span>
+          <h2 className="section-heading">
+            We don’t just teach English.
+            <br />
+            We make you speak it.
+          </h2>
+          <p className="section-intro">
+            Speaking is not saved for the end of a lesson. It is how every lesson begins, grows,
+            and becomes useful in real life.
+          </p>
+        </motion.div>
 
         <div className="feature-grid">
-          {features.map(({ Icon, title, text }) => (
-            <div key={title} className="feature">
+          {features.map(({ Icon, title, text }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={VIEWPORT_ONCE}
+              transition={{ duration: 0.45, delay: i * 0.07, ease: EASE_OUT_EXPO }}
+              whileHover={{ y: -3 }}
+              className="feature"
+            >
               <div className="feature-icon-box">
                 <Icon size={20} />
               </div>
               <h3>{title}</h3>
               <p>{text}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -327,7 +416,8 @@ export function WhySection() {
 }
 
 export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolean }) {
-  const [preview, setPreview] = useState<PreviewImage | null>(null);
+  const [posterList, setPosterList] = useState<PreviewImage[]>([]);
+  const [posterIdx, setPosterIdx] = useState<number | null>(null);
 
   const courses = [
     {
@@ -342,7 +432,7 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
         'Monday–Friday · 1 hour sessions',
         'One-day free trial class',
       ],
-      posters: [ASSETS.kidsPoster1, ASSETS.kidsPoster2],
+      posters: [ASSETS.kidsWelcomePoster, ASSETS.kidsPoster1, ASSETS.kidsPoster2],
     },
     {
       name: 'Female English Speaking Course',
@@ -360,10 +450,19 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
     },
   ];
 
+  const activePreview =
+    posterIdx !== null && posterList[posterIdx] ? posterList[posterIdx] : null;
+
   return (
     <section className="section" id="english">
       <div className="shell">
-        <div className="section-top">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+          className="section-top"
+        >
           <div>
             <span className="eyebrow">English Speaking Branch</span>
             <h2 className="section-heading">Speak English, Speak Confidently!</h2>
@@ -372,13 +471,20 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
             </p>
           </div>
           <span className="tag">1 day free trial class</span>
-        </div>
+        </motion.div>
 
         <div className="course-grid">
           {courses
             .filter((_, idx) => !onlyKids || idx === 0)
-            .map((course) => (
-              <article key={course.name} className="course-card">
+            .map((course, idx) => (
+              <motion.article
+                key={course.name}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={VIEWPORT_ONCE}
+                transition={{ duration: 0.5, delay: idx * 0.1, ease: EASE_OUT_EXPO }}
+                className="course-card"
+              >
                 <div className="media-frame">
                   <img
                     className="course-photo"
@@ -408,17 +514,25 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
                   </div>
 
                   <div className="poster-options">
-                    {course.posters.map((posterUrl, idx) => (
+                    {course.posters.map((posterUrl, pIdx) => (
                       <Button
                         key={posterUrl}
                         variant="ghost"
                         className="poster-button"
-                        aria-label={`View ${course.name} poster ${idx + 1}`}
-                        onClick={() => setPreview({ url: posterUrl, name: course.name })}
+                        aria-label={`View ${course.name} poster ${pIdx + 1}`}
+                        onClick={() => {
+                          setPosterList(
+                            course.posters.map((url, k) => ({
+                              url,
+                              name: `${course.name} — Poster ${k + 1}`,
+                            }))
+                          );
+                          setPosterIdx(pIdx);
+                        }}
                       >
                         <img
                           src={posterUrl}
-                          alt={`${course.name} poster ${idx + 1}`}
+                          alt={`${course.name} poster ${pIdx + 1}`}
                           loading="lazy"
                           referrerPolicy="no-referrer"
                         />
@@ -427,18 +541,35 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
                     <span className="poster-hint">Tap to view posters</span>
                   </div>
 
-                  {course.name.startsWith('Kids') && (
+                  {course.name.startsWith('Kids') && !onlyKids && (
                     <Link to="/kids-program" className="text-link">
                       Explore kids program <ArrowRight size={16} />
                     </Link>
                   )}
                 </div>
-              </article>
+              </motion.article>
             ))}
         </div>
       </div>
 
-      <ImageDialog preview={preview} onClose={() => setPreview(null)} />
+      <ImageDialog
+        preview={activePreview}
+        onClose={() => setPosterIdx(null)}
+        onPrev={
+          posterList.length > 1
+            ? () =>
+                setPosterIdx((prev) =>
+                  prev === null ? null : (prev + posterList.length - 1) % posterList.length
+                )
+            : undefined
+        }
+        onNext={
+          posterList.length > 1
+            ? () =>
+                setPosterIdx((prev) => (prev === null ? null : (prev + 1) % posterList.length))
+            : undefined
+        }
+      />
     </section>
   );
 }
@@ -468,16 +599,30 @@ export function AiProgramsSection() {
   return (
     <section className="section section-muted" id="ai">
       <div className="shell">
-        <span className="eyebrow">AI Branch</span>
-        <h2 className="section-heading">From AI User to AI Creator</h2>
-        <p className="section-intro">
-          Don’t just use AI — make your own AI. Practical, hands-on learning for kids, girls and
-          women.
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        >
+          <span className="eyebrow">AI Branch</span>
+          <h2 className="section-heading">From AI User to AI Creator</h2>
+          <p className="section-intro">
+            Don’t just use AI — make your own AI. Practical, hands-on learning for kids, girls and
+            women.
+          </p>
+        </motion.div>
 
         <div className="ai-grid mt-9">
-          {aiCourses.map((course) => (
-            <article key={course.name} className="ai-card">
+          {aiCourses.map((course, idx) => (
+            <motion.article
+              key={course.name}
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={VIEWPORT_ONCE}
+              transition={{ duration: 0.45, delay: idx * 0.08, ease: EASE_OUT_EXPO }}
+              className="ai-card"
+            >
               <div className="media-frame">
                 <img
                   className="ai-poster"
@@ -493,21 +638,34 @@ export function AiProgramsSection() {
                 <p>{course.text}</p>
                 <EnrollButton course={course.name} />
               </div>
-            </article>
+            </motion.article>
           ))}
         </div>
 
         <h3 className="certificate-heading">What You’ll Learn</h3>
         <div className="skills-grid">
           {AI_SKILLS.map((skill, idx) => (
-            <div key={skill} className="skill">
+            <motion.div
+              key={skill}
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={VIEWPORT_ONCE}
+              transition={{ duration: 0.35, delay: idx * 0.03, ease: EASE_OUT_EXPO }}
+              className="skill"
+            >
               {idx % 2 === 0 ? <Code size={18} /> : <Sparkles size={18} />}
               <span>{skill}</span>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        <div className="build-banner">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
+          className="build-banner"
+        >
           <div>
             <span className="eyebrow">Learn Today · Grow Tomorrow · A Brighter You</span>
             <h2>
@@ -531,13 +689,15 @@ export function AiProgramsSection() {
             loading="lazy"
             referrerPolicy="no-referrer"
           />
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 }
 
 export function JourneySection() {
+  const [activeStep, setActiveStep] = useState(0);
+
   const steps = [
     ['Message on WhatsApp', 'Send us a message on 0307-5882858.'],
     ['Free Consultation', 'We guide you to the right course & level.'],
@@ -550,20 +710,42 @@ export function JourneySection() {
   return (
     <section className="section" id="journey">
       <div className="shell">
-        <span className="eyebrow">Your Learning Journey</span>
-        <h2 className="section-heading">6 Simple Steps</h2>
-        <p className="section-intro mb-9">
-          From your first conversation to your next achievement.
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        >
+          <span className="eyebrow">Your Learning Journey</span>
+          <h2 className="section-heading">6 Simple Steps</h2>
+          <p className="section-intro mb-9">
+            From your first conversation to your next achievement.
+          </p>
+        </motion.div>
 
         <div className="journey-grid">
-          {steps.map(([title, desc], idx) => (
-            <div key={title} className="step">
-              <span className="step-number">0{idx + 1}</span>
-              <h3>{title}</h3>
-              <p>{desc}</p>
-            </div>
-          ))}
+          {steps.map(([title, desc], idx) => {
+            const isActive = activeStep === idx;
+            return (
+              <motion.button
+                key={title}
+                type="button"
+                onClick={() => setActiveStep(idx)}
+                onMouseEnter={() => setActiveStep(idx)}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={VIEWPORT_ONCE}
+                transition={{ duration: 0.4, delay: idx * 0.05, ease: EASE_OUT_EXPO }}
+                className={`step text-left cursor-pointer ${
+                  isActive ? '!border-primary/50 bg-primary/[0.05]' : ''
+                }`}
+              >
+                <span className="step-number">0{idx + 1}</span>
+                <h3>{title}</h3>
+                <p>{desc}</p>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -571,57 +753,113 @@ export function JourneySection() {
 }
 
 export function CertificatesSection() {
-  const [preview, setPreview] = useState<PreviewImage | null>(null);
   const [filter, setFilter] = useState<'All' | 'Advanced' | 'Basic' | 'Completed'>('All');
-  const allGroups: Array<'Advanced' | 'Basic' | 'Completed'> = ['Advanced', 'Basic', 'Completed'];
-  const visibleGroups = filter === 'All' ? allGroups : [filter];
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
+  const railRef = useRef<HTMLDivElement | null>(null);
+
+  const visibleCerts =
+    filter === 'All' ? CERTIFICATES : CERTIFICATES.filter((c) => c.group === filter);
+
+  const activePreview: PreviewImage | null =
+    previewIdx !== null && visibleCerts[previewIdx]
+      ? {
+          name: `${visibleCerts[previewIdx].name} — ${visibleCerts[previewIdx].group} Certificate`,
+          url: visibleCerts[previewIdx].image,
+        }
+      : null;
+
+  const scrollRail = (direction: -1 | 1) => {
+    if (!railRef.current) return;
+    railRef.current.scrollBy({ left: direction * 340, behavior: 'smooth' });
+  };
 
   return (
     <section className="section section-muted" id="certificates">
       <div className="shell">
-        <span className="eyebrow">Verified Student Achievements</span>
-        <h2 className="section-heading">Our Proud Students</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        >
+          <span className="eyebrow">Verified Student Achievements</span>
+          <h2 className="section-heading">Our Proud Students</h2>
+        </motion.div>
 
-        <div className="cert-filter-bar" role="tablist" aria-label="Certificate category filter">
-          {(
-            [
-              { id: 'All', label: 'All Certificates' },
-              { id: 'Advanced', label: 'Advanced Session' },
-              { id: 'Basic', label: 'Basic Session' },
-              { id: 'Completed', label: 'Course Completion' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={filter === tab.id}
-              onClick={() => setFilter(tab.id)}
-              className={`cert-filter-btn ${filter === tab.id ? 'active' : ''}`}
+        <div className="cert-controls-row">
+          <div className="cert-filter-bar" role="tablist" aria-label="Certificate category filter">
+            {(
+              [
+                { id: 'All', label: 'All Certificates' },
+                { id: 'Advanced', label: 'Advanced Session' },
+                { id: 'Basic', label: 'Basic Session' },
+                { id: 'Completed', label: 'Course Completion' },
+              ] as const
+            ).map((tab) => {
+              const active = filter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => {
+                    setFilter(tab.id);
+                    setPreviewIdx(null);
+                  }}
+                  className={`cert-filter-btn ${active ? 'active' : ''}`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="cert-filter-pill"
+                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                      className="cert-filter-pill"
+                    />
+                  )}
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-muted-foreground tabular-nums mr-1">
+              {visibleCerts.length} certificates
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Scroll certificates left"
+              onClick={() => scrollRail(-1)}
             >
-              {tab.label}
-            </button>
-          ))}
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Scroll certificates right"
+              onClick={() => scrollRail(1)}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
         </div>
 
-        {visibleGroups.map((group) => (
-          <div key={group}>
-            <h3 className="certificate-heading">
-              {group === 'Completed' ? 'Course Completion' : `${group} Session`} Certificates
-            </h3>
-
-            <div className="cert-grid">
-              {CERTIFICATES.filter((cert) => cert.group === group).map((cert) => (
+        <motion.div layout ref={railRef} className="cert-grid">
+          <AnimatePresence mode="popLayout">
+            {visibleCerts.map((cert, idx) => (
+              <motion.div
+                key={cert.name}
+                layout
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.94 }}
+                transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
+              >
                 <Button
-                  key={cert.name}
                   variant="ghost"
                   className="cert-card"
-                  onClick={() =>
-                    setPreview({
-                      name: `${cert.name} — ${cert.group} Certificate`,
-                      url: cert.image,
-                    })
-                  }
+                  onClick={() => setPreviewIdx(idx)}
                   aria-label={`View ${cert.name} certificate`}
                 >
                   <img
@@ -635,33 +873,70 @@ export function CertificatesSection() {
                     <small>{cert.group} ↗</small>
                   </span>
                 </Button>
-              ))}
-            </div>
-          </div>
-        ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
-      <ImageDialog preview={preview} onClose={() => setPreview(null)} />
+      <ImageDialog
+        preview={activePreview}
+        onClose={() => setPreviewIdx(null)}
+        onPrev={() =>
+          setPreviewIdx((prev) =>
+            prev === null ? null : (prev + visibleCerts.length - 1) % visibleCerts.length
+          )
+        }
+        onNext={() =>
+          setPreviewIdx((prev) => (prev === null ? null : (prev + 1) % visibleCerts.length))
+        }
+      />
     </section>
   );
 }
 
 export function StoriesSection() {
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
+
   const stories = [
     { image: ASSETS.kidsEnglish, label: 'Kids’ progress', title: 'A young learner speaks' },
     { image: ASSETS.heroMain, label: 'Parent story', title: 'A parent shares the change' },
     { image: ASSETS.womenEnglish, label: 'Women’s progress', title: 'A woman finds her voice' },
   ];
 
+  const activePreview: PreviewImage | null =
+    previewIdx !== null && stories[previewIdx]
+      ? {
+          name: `${stories[previewIdx].title} (${stories[previewIdx].label})`,
+          url: stories[previewIdx].image,
+        }
+      : null;
+
   return (
     <section className="section" id="voices">
       <div className="shell">
-        <span className="eyebrow">Real student voices</span>
-        <h2 className="section-heading">Confidence you can hear</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        >
+          <span className="eyebrow">Real student voices</span>
+          <h2 className="section-heading">Confidence you can hear</h2>
+        </motion.div>
 
         <div className="story-grid mt-9">
-          {stories.map((story) => (
-            <article key={story.title} className="story">
+          {stories.map((story, idx) => (
+            <motion.button
+              key={story.title}
+              type="button"
+              onClick={() => setPreviewIdx(idx)}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={VIEWPORT_ONCE}
+              transition={{ duration: 0.45, delay: idx * 0.08, ease: EASE_OUT_EXPO }}
+              className="story text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <div className="media-frame rounded-[14px]">
                 <img
                   className="story-image"
@@ -674,12 +949,25 @@ export function StoriesSection() {
               <span className="eyebrow mt-5">{story.label}</span>
               <h3>{story.title}</h3>
               <p className="flex items-center gap-2">
-                <Play size={13} className="text-primary" /> Video coming soon
+                <Play size={13} className="text-primary" /> Tap to preview highlight
               </p>
-            </article>
+            </motion.button>
           ))}
         </div>
       </div>
+
+      <ImageDialog
+        preview={activePreview}
+        onClose={() => setPreviewIdx(null)}
+        onPrev={() =>
+          setPreviewIdx((prev) =>
+            prev === null ? null : (prev + stories.length - 1) % stories.length
+          )
+        }
+        onNext={() =>
+          setPreviewIdx((prev) => (prev === null ? null : (prev + 1) % stories.length))
+        }
+      />
     </section>
   );
 }
@@ -690,7 +978,12 @@ export function GlobalClassroomSection() {
   return (
     <section className="section section-coral">
       <div className="shell split">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        >
           <span className="eyebrow">Our global classroom</span>
           <h2 className="section-heading">Learn English from anywhere in the world.</h2>
           <p className="section-intro">
@@ -703,9 +996,13 @@ export function GlobalClassroomSection() {
               </span>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        <img
+        <motion.img
+          initial={{ opacity: 0, scale: 0.97 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
           src={ASSETS.globalClassroom}
           alt="Women joining an online English class from different locations"
           loading="lazy"
@@ -720,14 +1017,23 @@ export function TeachersSection() {
   return (
     <section className="section" id="teachers">
       <div className="shell split">
-        <img
+        <motion.img
+          initial={{ opacity: 0, scale: 0.97 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
           src={ASSETS.teachers}
           alt="The Language Spoken House teaching team"
           loading="lazy"
           referrerPolicy="no-referrer"
         />
 
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        >
           <span className="eyebrow">Meet your guides</span>
           <h2 className="section-heading">
             Expert teachers.
@@ -746,7 +1052,7 @@ export function TeachersSection() {
           <div className="mt-7">
             <EnrollButton label="Meet a teacher" />
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -756,7 +1062,13 @@ export function ContactSection() {
   return (
     <section className="section contact" id="contact">
       <div className="shell">
-        <div className="contact-panel">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={VIEWPORT_ONCE}
+          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+          className="contact-panel"
+        >
           <span className="eyebrow">Your first conversation starts here</span>
           <h2 className="section-heading">Your Journey Starts Here</h2>
           <p className="section-intro">
@@ -785,19 +1097,39 @@ export function ContactSection() {
             <span>Career Growth</span>
             <span>Flexible Learning</span>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
 }
 
 export function KidsAgePathsSection() {
+  const [selected, setSelected] = useState(0);
+
   const levels = [
-    { name: 'Little Explorers', tag: 'Greetings' },
-    { name: 'Young Speakers', tag: 'Colours' },
-    { name: 'Smart Communicators', tag: 'Animals' },
-    { name: 'Young but advanced', tag: 'Storytelling' },
+    {
+      name: 'Little Explorers',
+      tag: 'Ages 4–6 · Rs. 133/Day',
+      focus: 'Greetings, phonetic confidence, everyday classroom words, and playful speaking games.',
+    },
+    {
+      name: 'Young Speakers',
+      tag: 'Ages 7–9 · Rs. 145/Day',
+      focus: 'Building full sentences, asking questions, colours, daily routines, and guided dialogue.',
+    },
+    {
+      name: 'Smart Communicators',
+      tag: 'Ages 10–12 · Rs. 155/Day',
+      focus: 'Clear pronunciation, group discussions, vocabulary fluency, and real-world scenarios.',
+    },
+    {
+      name: 'Young but advanced',
+      tag: 'Ages 12–14 · Rs. 155/Day',
+      focus: 'Storytelling, confident presentations, critical thinking, and expressive speaking.',
+    },
   ];
+
+  const active = levels[selected] ?? levels[0];
 
   return (
     <section className="section section-muted">
@@ -806,16 +1138,43 @@ export function KidsAgePathsSection() {
         <h2 className="section-heading">A path for every young speaker</h2>
 
         <div className="feature-grid">
-          {levels.map((level) => (
-            <div key={level.name} className="feature">
-              <div className="feature-icon-box">
-                <BookOpen size={20} />
-              </div>
-              <h3>{level.name}</h3>
-              <span className="tag mt-2">{level.tag}</span>
-            </div>
-          ))}
+          {levels.map((level, idx) => {
+            const isSelected = selected === idx;
+            return (
+              <button
+                key={level.name}
+                type="button"
+                onClick={() => setSelected(idx)}
+                className={`feature text-left cursor-pointer ${
+                  isSelected ? '!border-primary/60 bg-primary/[0.06]' : ''
+                }`}
+              >
+                <div className="feature-icon-box">
+                  <BookOpen size={20} />
+                </div>
+                <h3>{level.name}</h3>
+                <span className="tag mt-2">{level.tag}</span>
+              </button>
+            );
+          })}
         </div>
+
+        <motion.div
+          key={active.name}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
+          className="mt-6 rounded-2xl border border-white/10 bg-card/90 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        >
+          <div>
+            <span className="eyebrow !mb-1">{active.tag}</span>
+            <h3 className="text-lg font-bold text-foreground">{active.name}</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{active.focus}</p>
+          </div>
+          <div className="shrink-0">
+            <EnrollButton course={`Kids Spoken English — ${active.name}`} label="Book Free Demo" />
+          </div>
+        </motion.div>
       </div>
     </section>
   );
