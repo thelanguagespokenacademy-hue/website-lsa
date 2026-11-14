@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { motion, useScroll, useSpring } from 'motion/react';
 import { ArrowUpRight, House, MessageCircle, PanelLeft } from 'lucide-react';
 import { Link, usePathname } from '../lib/router';
+import { useBookingModal } from '../lib/bookingContext';
 import { Button } from './ui/Button';
 import { NavDrawer } from './ui/Modal';
-import { EMAIL_URL, ROUTE_META, WHATSAPP_URL } from '../data/siteData';
+import { EMAIL_URL, ROUTE_META, WHATSAPP_DISPLAY } from '../data/siteData';
+import { FadeInUp } from './ui/FadeInUp';
 
 const HEADER_NAV_ITEMS = [
   { to: '/programs', label: 'Programs' },
@@ -80,13 +82,14 @@ export function SiteHeader() {
 }
 
 export function FloatingWhatsAppButton() {
+  const { openBookingModal } = useBookingModal();
+
   return (
-    <motion.a
-      href={WHATSAPP_URL}
-      target="_blank"
-      rel="noreferrer"
-      className="floating-wa"
-      aria-label="Chat on WhatsApp"
+    <motion.button
+      type="button"
+      onClick={() => openBookingModal('Free Trial Consultation / General Inquiry')}
+      className="floating-wa cursor-pointer"
+      aria-label="Open booking form for WhatsApp"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
@@ -95,13 +98,15 @@ export function FloatingWhatsAppButton() {
     >
       <MessageCircle size={18} />
       <span>Let’s have a chat!</span>
-    </motion.a>
+    </motion.button>
   );
 }
 
 export function SiteFooter() {
+  const { openBookingModal } = useBookingModal();
+
   return (
-    <footer className="footer">
+    <FadeInUp as="footer" className="footer" y={20}>
       <div className="shell">
         <div className="footer-grid">
           <div>
@@ -112,8 +117,8 @@ export function SiteFooter() {
               Language Spoken House
             </Link>
             <p className="mt-4">
-              The destination for practical English mastery, confident communication and AI skills
-              for kids and women worldwide.
+              The destination for practical English mastery, confident speaking and real-life
+              communication for kids, women and teachers worldwide.
             </p>
           </div>
 
@@ -121,8 +126,8 @@ export function SiteFooter() {
             <h4>Programs</h4>
             <Link to="/kids-program">Kids English</Link>
             <Link to="/english">Women’s Spoken</Link>
-            <Link to="/ai">AI Courses</Link>
             <Link to="/teachers">Teacher Communication</Link>
+            <Link to="/journey">Learning Journey</Link>
           </div>
 
           <div>
@@ -136,9 +141,13 @@ export function SiteFooter() {
           <div>
             <h4>Start a conversation</h4>
             <p>Learn Today · Grow Tomorrow · A Brighter You</p>
-            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-              WhatsApp 0307-5882858 ↗
-            </a>
+            <button
+              type="button"
+              onClick={() => openBookingModal('Free Trial Consultation / General Inquiry')}
+              className="mt-3 block text-left text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+            >
+              WhatsApp {WHATSAPP_DISPLAY} ↗
+            </button>
             <a href={EMAIL_URL}>
               Email us <ArrowUpRight className="inline" size={13} />
             </a>
@@ -150,7 +159,7 @@ export function SiteFooter() {
           <span>Live learning. Real confidence.</span>
         </div>
       </div>
-    </footer>
+    </FadeInUp>
   );
 }
 

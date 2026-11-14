@@ -1,6 +1,18 @@
-export const WHATSAPP_URL = 'https://wa.me/923075882858';
+export const WHATSAPP_NUMBER_E164 = '923483452142';
+export const WHATSAPP_DISPLAY = '+92 348 3452142';
+export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER_E164}`;
 export const PHONE_URL = 'tel:+923483452142';
 export const EMAIL_URL = 'mailto:rimshaofficials24@gmail.com';
+
+export const COURSE_OPTIONS: string[] = [
+  'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
+  'Kids Spoken English Program (Ages 7–9 · Rs. 145/Day)',
+  'Kids Spoken English Program (Ages 10–14 · Rs. 155/Day)',
+  'Kids English Speaking Course (Ages 4–14)',
+  'Female English Speaking Course',
+  'Teacher Communication Track',
+  'Free Trial Consultation / General Inquiry',
+];
 
 const asset = (path: string) =>
   `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`;
@@ -15,10 +27,6 @@ export const ASSETS = {
   kidsPoster2: asset('images/no-fees-english-speaking-poster-fee-3500.png'),
   womenPoster1: asset('images/no-fees-female-speaking-course-reference-style-v4.jpeg'),
   womenPoster2: asset('images/no-fees-female-speaking-course-navy-gold.png'),
-  aiKids: asset('images/learn-and-build-your-ai-skills.png'),
-  aiWomen: asset('images/no-fees-ai-course-post-v8-1.jpg'),
-  aiAdvanced: asset('images/no-fees-advanced-ai-course-online-classes-square-v2.jpg'),
-  aiBanner: asset('images/no-fees-ai-course-post-v8.jpg'),
   kidsWelcomePoster: asset('assets/aistudio/WhatsApp_Image_2026-11-13_at_9.51.22_AM_e217f483.jpeg'),
 };
 
@@ -52,7 +60,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   {
     image: ASSETS.globalClassroom,
     title: 'One classroom. A world of possibility.',
-    text: 'English speaking and AI skills, taught online in Urdu and English.',
+    text: 'Practical spoken English for kids, women, and teachers, taught online in Urdu and English.',
   },
 ];
 
@@ -135,17 +143,17 @@ export const CERTIFICATES: CertificateItem[] = [
   },
 ];
 
-export const AI_SKILLS: string[] = [
-  'Web Making',
-  'Prompt Engineering',
-  'UI Design with AI',
-  'App Making without Coding',
-  'Basic Computer Use',
-  'AI Tools Daily Use',
-  'AI Content Writing',
-  'AI Video & Image Editing',
-  'AI Freelancing & Business',
-  'Create Your Own AI',
+export const SPOKEN_ENGLISH_SKILLS: string[] = [
+  'Daily Life Conversation',
+  'Pronunciation & Fluency',
+  'Practical Grammar Usage',
+  'Vocabulary Building',
+  'Speaking Without Hesitation',
+  'Storytelling & Expression',
+  'Workplace & Interview English',
+  'Active Listening Practice',
+  'Parent-Child Speaking Habits',
+  'Classroom Teaching English',
 ];
 
 export interface RouteMeta {
@@ -155,19 +163,14 @@ export interface RouteMeta {
 
 export const ROUTE_META: Record<string, RouteMeta> = {
   '/': {
-    title: 'English Speaking & AI Courses — Language Spoken House',
+    title: 'Live Spoken English Courses — Language Spoken House',
     description:
-      'Live online English speaking and AI courses for kids and women. Small batches, Urdu and English guidance, and a free trial class.',
+      'Live online English speaking courses for kids, women, and teachers. Small batches, Urdu and English guidance, and a free trial class.',
   },
   '/about': {
     title: 'Our Difference — Language Spoken House',
     description:
       'Speaking-first learning, practical communication and warm expert guidance at Language Spoken House.',
-  },
-  '/ai': {
-    title: 'AI Courses — Language Spoken House',
-    description:
-      'Kids AI, Women AI and Advanced AI Generation courses. Learn practical AI tools and build projects.',
   },
   '/certificates': {
     title: 'Student Certificates — Language Spoken House',
@@ -177,17 +180,17 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/contact': {
     title: 'Book a Free Trial — Language Spoken House',
     description:
-      'Contact Language Spoken House on WhatsApp or phone at 0307-5882858 to book a free online trial class.',
+      'Contact Language Spoken House on WhatsApp or phone at +92 348 3452142 to book a free online trial class.',
   },
   '/english': {
     title: 'English Speaking Courses — Language Spoken House',
     description:
-      'Kids and female English speaking courses with six students per batch and live weekday sessions.',
+      'Kids and female English speaking courses with small batches and live weekday sessions.',
   },
   '/journey': {
     title: 'Your Learning Journey — Language Spoken House',
     description:
-      'Discover the six steps from free consultation and trial class to live learning, practical projects and certification.',
+      'Discover the six steps from free consultation and trial class to live speaking practice and certification.',
   },
   '/kids-program': {
     title: 'English Speaking Program for Kids — Language Spoken House',
@@ -197,7 +200,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/programs': {
     title: 'Our Programs — Language Spoken House',
     description:
-      'Explore spoken English and practical AI courses for kids and women, with free trial enrollment.',
+      'Explore live spoken English courses for kids, women, and teachers, with free trial enrollment.',
   },
   '/stories': {
     title: 'Student Voices — Language Spoken House',

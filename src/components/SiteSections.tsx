@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Code,
   Globe,
   GraduationCap,
   Heart,
@@ -17,24 +16,25 @@ import {
   Mic,
   Phone,
   Play,
-  Sparkles,
   Users,
   Video,
 } from 'lucide-react';
 import { Link } from '../lib/router';
+import { useBookingModal } from '../lib/bookingContext';
 import { Button } from './ui/Button';
+import { FadeInUp } from './ui/FadeInUp';
 import { ImageDialog, type PreviewImage } from './ui/Modal';
 import {
-  AI_SKILLS,
   ASSETS,
   CERTIFICATES,
   HERO_SLIDES,
   PHONE_URL,
-  WHATSAPP_URL,
+  SPOKEN_ENGLISH_SKILLS,
+  WHATSAPP_DISPLAY,
 } from '../data/siteData';
 
 const EASE_OUT_EXPO: [number, number, number, number] = [0.16, 1, 0.3, 1];
-const VIEWPORT_ONCE = { once: true, amount: 0.12 } as const;
+const VIEWPORT_ONCE = { once: true, amount: 0.05 } as const;
 
 export function PageTitle({ title, eyebrow }: { title: string; eyebrow: string }) {
   return (
@@ -44,7 +44,7 @@ export function PageTitle({ title, eyebrow }: { title: string; eyebrow: string }
       transition={{ duration: 0.45, ease: EASE_OUT_EXPO }}
       className="shell page-title"
     >
-      <Link to="/">
+      <Link to="/" className="back-link">
         <ArrowLeft size={14} /> Back to the house
       </Link>
       <span className="eyebrow">{eyebrow}</span>
@@ -60,18 +60,12 @@ export function EnrollButton({
   course?: string;
   label?: string;
 }) {
-  const href = course
-    ? `${WHATSAPP_URL}?text=${encodeURIComponent(
-        `Hello! I’m interested in the ${course}. I would like to book a free trial class.`
-      )}`
-    : WHATSAPP_URL;
+  const { openBookingModal } = useBookingModal();
 
   return (
-    <Button asChild>
-      <a href={href} target="_blank" rel="noreferrer">
-        {label}
-        <ArrowRight />
-      </a>
+    <Button type="button" onClick={() => openBookingModal(course)}>
+      {label}
+      <ArrowRight />
     </Button>
   );
 }
@@ -208,20 +202,14 @@ export function BenefitsBar() {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={VIEWPORT_ONCE}
-      transition={{ duration: 0.4 }}
-      className="benefits"
-    >
+    <FadeInUp className="benefits" y={16} duration={0.45}>
       {items.map(({ Icon, text }) => (
         <span key={text}>
           <Icon />
           {text}
         </span>
       ))}
-    </motion.div>
+    </FadeInUp>
   );
 }
 
@@ -229,22 +217,61 @@ export function ShowcaseMarquee() {
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
 
   const tiles = [
-    { title: 'Kids English Speaking', tag: 'Ages 4–14', url: ASSETS.kidsEnglish },
-    { title: 'Women’s Spoken English', tag: 'Daily & Work', url: ASSETS.womenEnglish },
-    { title: 'Kids AI Program', tag: '6 Months', url: ASSETS.aiKids },
-    { title: 'Women AI Course', tag: '4 Months', url: ASSETS.aiWomen },
-    { title: 'Advanced AI Generation', tag: 'Build Tools', url: ASSETS.aiAdvanced },
-    { title: 'Global Live Classroom', tag: 'Worldwide', url: ASSETS.globalClassroom },
-    { title: 'Expert Trainers', tag: 'Live Feedback', url: ASSETS.teachers },
+    {
+      title: 'Kids English Speaking',
+      tag: 'Ages 4–14',
+      url: ASSETS.kidsEnglish,
+      course: 'Kids English Speaking Course (Ages 4–14)',
+    },
+    {
+      title: 'Women’s Spoken English',
+      tag: 'Daily & Work',
+      url: ASSETS.womenEnglish,
+      course: 'Female English Speaking Course',
+    },
+    {
+      title: 'Kids Spoken Poster',
+      tag: 'Mon–Fri · Live',
+      url: ASSETS.kidsWelcomePoster,
+      course: 'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
+    },
+    {
+      title: 'Playful Kids Speaking',
+      tag: 'Games & Stories',
+      url: ASSETS.kidsPoster1,
+      course: 'Kids English Speaking Course (Ages 4–14)',
+    },
+    {
+      title: 'Female Fluency Batch',
+      tag: 'Small Groups',
+      url: ASSETS.womenPoster1,
+      course: 'Female English Speaking Course',
+    },
+    {
+      title: 'Global Live Classroom',
+      tag: 'Worldwide',
+      url: ASSETS.globalClassroom,
+      course: 'Free Trial Consultation / General Inquiry',
+    },
+    {
+      title: 'Expert Trainers',
+      tag: 'Live Feedback',
+      url: ASSETS.teachers,
+      course: 'Teacher Communication Track',
+    },
   ];
 
   const activePreview: PreviewImage | null =
     previewIdx !== null && tiles[previewIdx]
-      ? { name: tiles[previewIdx].title, url: tiles[previewIdx].url }
+      ? {
+          name: tiles[previewIdx].title,
+          url: tiles[previewIdx].url,
+          course: tiles[previewIdx].course,
+        }
       : null;
 
   return (
-    <div className="marquee-band" aria-label="Program visual highlights">
+    <FadeInUp className="marquee-band" aria-label="Program visual highlights" y={20}>
       <div className="marquee-mask">
         <div className="marquee-track">
           {[...tiles, ...tiles].map((tile, idx) => (
@@ -275,7 +302,7 @@ export function ShowcaseMarquee() {
           setPreviewIdx((prev) => (prev === null ? null : (prev + 1) % tiles.length))
         }
       />
-    </div>
+    </FadeInUp>
   );
 }
 
@@ -308,21 +335,16 @@ export function WhoAreYouSection() {
   ];
 
   return (
-    <section className="section">
+    <FadeInUp as="section" className="section">
       <div className="shell">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        >
+        <FadeInUp y={16}>
           <span className="eyebrow">Start where you are</span>
           <h2 className="section-heading">Who are you here for?</h2>
           <p className="section-intro">
             Choose the path that fits your goal. Every class is live, practical, and built for
             confident speaking.
           </p>
-        </motion.div>
+        </FadeInUp>
 
         <div className="path-grid mt-9">
           {paths.map(({ index, Icon, title, text, to, cta }, i) => (
@@ -350,7 +372,7 @@ export function WhoAreYouSection() {
           ))}
         </div>
       </div>
-    </section>
+    </FadeInUp>
   );
 }
 
@@ -371,14 +393,9 @@ export function WhySection() {
   ];
 
   return (
-    <section className="section section-coral" id="why">
+    <FadeInUp as="section" className="section section-coral" id="why">
       <div className="shell">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        >
+        <FadeInUp y={16}>
           <span className="eyebrow">Why Language Spoken House?</span>
           <h2 className="section-heading">
             We don’t just teach English.
@@ -389,7 +406,7 @@ export function WhySection() {
             Speaking is not saved for the end of a lesson. It is how every lesson begins, grows,
             and becomes useful in real life.
           </p>
-        </motion.div>
+        </FadeInUp>
 
         <div className="feature-grid">
           {features.map(({ Icon, title, text }, i) => (
@@ -411,7 +428,7 @@ export function WhySection() {
           ))}
         </div>
       </div>
-    </section>
+    </FadeInUp>
   );
 }
 
@@ -454,15 +471,9 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
     posterIdx !== null && posterList[posterIdx] ? posterList[posterIdx] : null;
 
   return (
-    <section className="section" id="english">
+    <FadeInUp as="section" className="section" id="english">
       <div className="shell">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-          className="section-top"
-        >
+        <FadeInUp className="section-top" y={16}>
           <div>
             <span className="eyebrow">English Speaking Branch</span>
             <h2 className="section-heading">Speak English, Speak Confidently!</h2>
@@ -471,7 +482,7 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
             </p>
           </div>
           <span className="tag">1 day free trial class</span>
-        </motion.div>
+        </FadeInUp>
 
         <div className="course-grid">
           {courses
@@ -483,6 +494,7 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={VIEWPORT_ONCE}
                 transition={{ duration: 0.5, delay: idx * 0.1, ease: EASE_OUT_EXPO }}
+                whileHover={{ y: -5 }}
                 className="course-card"
               >
                 <div className="media-frame">
@@ -525,6 +537,7 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
                             course.posters.map((url, k) => ({
                               url,
                               name: `${course.name} — Poster ${k + 1}`,
+                              course: course.name,
                             }))
                           );
                           setPosterIdx(pIdx);
@@ -570,69 +583,65 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
             : undefined
         }
       />
-    </section>
+    </FadeInUp>
   );
 }
 
-export function AiProgramsSection() {
-  const aiCourses = [
+export function SpokenSkillsSection() {
+  const speakingTracks = [
     {
-      name: 'Kids AI Course',
-      duration: '6 Months',
-      text: 'Fun · Creative · Future Ready',
-      image: ASSETS.aiKids,
+      name: 'Kids Spoken English',
+      duration: 'Ages 4–14',
+      text: 'Games · Storytelling · Real Confidence',
+      image: ASSETS.kidsPoster1,
     },
     {
-      name: 'Women AI Course',
-      duration: '4 Months',
-      text: 'Learn · Practice · Create',
-      image: ASSETS.aiWomen,
+      name: 'Women’s Spoken English',
+      duration: 'Basic & Advanced',
+      text: 'Daily Life · Work · Clear Fluency',
+      image: ASSETS.womenPoster1,
     },
     {
-      name: 'Advanced AI Generation',
-      duration: 'For girls & women',
-      text: 'Build AI-powered tools',
-      image: ASSETS.aiAdvanced,
+      name: 'Teacher Communication',
+      duration: 'For Educators',
+      text: 'Classroom Clarity · Live Feedback',
+      image: ASSETS.teachers,
     },
   ];
 
   return (
-    <section className="section section-muted" id="ai">
+    <FadeInUp as="section" className="section section-muted" id="skills">
       <div className="shell">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        >
-          <span className="eyebrow">AI Branch</span>
-          <h2 className="section-heading">From AI User to AI Creator</h2>
+        <FadeInUp y={16}>
+          <span className="eyebrow">Communication Tracks</span>
+          <h2 className="section-heading">From Hesitation to Fluent Speaking</h2>
           <p className="section-intro">
-            Don’t just use AI — make your own AI. Practical, hands-on learning for kids, girls and
-            women.
+            Don’t just memorize rules — speak English naturally every day. Practical, interactive
+            sessions for kids, women, and teachers.
           </p>
-        </motion.div>
+        </FadeInUp>
 
-        <div className="ai-grid mt-9">
-          {aiCourses.map((course, idx) => (
+        <div className="track-grid mt-9">
+          {speakingTracks.map((course, idx) => (
             <motion.article
               key={course.name}
               initial={{ opacity: 0, y: 22 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={VIEWPORT_ONCE}
               transition={{ duration: 0.45, delay: idx * 0.08, ease: EASE_OUT_EXPO }}
-              className="ai-card"
+              whileHover={{ y: -5 }}
+              className="track-card"
             >
               <div className="media-frame">
                 <img
-                  className="ai-poster"
+                  className="track-poster"
                   src={course.image}
                   alt={course.name}
                   loading="lazy"
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <div className="ai-body">
+              <div className="track-body">
                 <span className="eyebrow">{course.duration}</span>
                 <h3>{course.name}</h3>
                 <p>{course.text}</p>
@@ -642,9 +651,11 @@ export function AiProgramsSection() {
           ))}
         </div>
 
-        <h3 className="certificate-heading">What You’ll Learn</h3>
+        <FadeInUp y={14}>
+          <h3 className="certificate-heading">What You’ll Learn</h3>
+        </FadeInUp>
         <div className="skills-grid">
-          {AI_SKILLS.map((skill, idx) => (
+          {SPOKEN_ENGLISH_SKILLS.map((skill, idx) => (
             <motion.div
               key={skill}
               initial={{ opacity: 0, y: 14 }}
@@ -653,45 +664,41 @@ export function AiProgramsSection() {
               transition={{ duration: 0.35, delay: idx * 0.03, ease: EASE_OUT_EXPO }}
               className="skill"
             >
-              {idx % 2 === 0 ? <Code size={18} /> : <Sparkles size={18} />}
+              {idx % 2 === 0 ? <Mic size={18} /> : <MessageCircle size={18} />}
               <span>{skill}</span>
             </motion.div>
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
-          className="build-banner"
-        >
+        <FadeInUp className="build-banner" y={20}>
           <div>
-            <span className="eyebrow">Learn Today · Grow Tomorrow · A Brighter You</span>
+            <span className="eyebrow">Learn · Speak · Grow — Ages 4 to 14</span>
             <h2>
-              Speak English Confidently.
+              Let Your Child Speak
               <br />
-              Build with AI.
+              with Real Confidence.
             </h2>
             <p className="section-intro">
-              Live online classes for kids, girls and women — English speaking and AI skills, in
-              small batches of only 6 students, taught in Urdu &amp; English.
+              Fun learning and live 1-hour Google Meet video sessions Monday to Friday, with only
+              7–8 students per session for personal speaking practice.
             </p>
-            <p className="section-intro mt-4">Stop using AI. Start building with AI!</p>
+            <p className="section-intro mt-4 tabular-nums">
+              Ages 4–6: Rs. 133/Day · Ages 7–9: Rs. 145/Day · Ages 10–14: Rs. 155/Day
+            </p>
             <div className="mt-6">
-              <EnrollButton label="Enroll Now" />
+              <EnrollButton course="Kids Spoken English Program (Ages 4–14)" label="Register Now" />
             </div>
           </div>
 
           <img
-            src={ASSETS.aiBanner}
-            alt="AI course — learn, practice and create"
+            src={ASSETS.kidsWelcomePoster}
+            alt="The Language Spoken House — Kids Spoken English Program"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
-        </motion.div>
+        </FadeInUp>
       </div>
-    </section>
+    </FadeInUp>
   );
 }
 
@@ -699,29 +706,24 @@ export function JourneySection() {
   const [activeStep, setActiveStep] = useState(0);
 
   const steps = [
-    ['Message on WhatsApp', 'Send us a message on 0307-5882858.'],
+    ['Message on WhatsApp', `Send us your details on WhatsApp (${WHATSAPP_DISPLAY}).`],
     ['Free Consultation', 'We guide you to the right course & level.'],
     ['Free Trial Class', 'Join one class free before enrolling.'],
     ['Live Online Classes', 'Small batches, 1 hour, Monday–Friday.'],
-    ['Practice & Projects', 'Speak daily, build real AI projects.'],
+    ['Daily Speaking Practice', 'Role-plays, dialogues, and live feedback.'],
     ['Get Your Certificate', 'Basic & Advanced session certificates.'],
   ];
 
   return (
-    <section className="section" id="journey">
+    <FadeInUp as="section" className="section" id="journey">
       <div className="shell">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        >
+        <FadeInUp y={16}>
           <span className="eyebrow">Your Learning Journey</span>
           <h2 className="section-heading">6 Simple Steps</h2>
           <p className="section-intro mb-9">
             From your first conversation to your next achievement.
           </p>
-        </motion.div>
+        </FadeInUp>
 
         <div className="journey-grid">
           {steps.map(([title, desc], idx) => {
@@ -736,6 +738,7 @@ export function JourneySection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={VIEWPORT_ONCE}
                 transition={{ duration: 0.4, delay: idx * 0.05, ease: EASE_OUT_EXPO }}
+                whileHover={{ y: -3 }}
                 className={`step text-left cursor-pointer ${
                   isActive ? '!border-primary/50 bg-primary/[0.05]' : ''
                 }`}
@@ -748,7 +751,7 @@ export function JourneySection() {
           })}
         </div>
       </div>
-    </section>
+    </FadeInUp>
   );
 }
 
@@ -774,17 +777,12 @@ export function CertificatesSection() {
   };
 
   return (
-    <section className="section section-muted" id="certificates">
+    <FadeInUp as="section" className="section section-muted" id="certificates">
       <div className="shell">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        >
+        <FadeInUp y={16}>
           <span className="eyebrow">Verified Student Achievements</span>
           <h2 className="section-heading">Our Proud Students</h2>
-        </motion.div>
+        </FadeInUp>
 
         <div className="cert-controls-row">
           <div className="cert-filter-bar" role="tablist" aria-label="Certificate category filter">
@@ -855,6 +853,7 @@ export function CertificatesSection() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.94 }}
                 transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
+                whileHover={{ y: -4 }}
               >
                 <Button
                   variant="ghost"
@@ -891,7 +890,7 @@ export function CertificatesSection() {
           setPreviewIdx((prev) => (prev === null ? null : (prev + 1) % visibleCerts.length))
         }
       />
-    </section>
+    </FadeInUp>
   );
 }
 
@@ -899,9 +898,24 @@ export function StoriesSection() {
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
 
   const stories = [
-    { image: ASSETS.kidsEnglish, label: 'Kids’ progress', title: 'A young learner speaks' },
-    { image: ASSETS.heroMain, label: 'Parent story', title: 'A parent shares the change' },
-    { image: ASSETS.womenEnglish, label: 'Women’s progress', title: 'A woman finds her voice' },
+    {
+      image: ASSETS.kidsEnglish,
+      label: 'Kids’ progress',
+      title: 'A young learner speaks',
+      course: 'Kids English Speaking Course (Ages 4–14)',
+    },
+    {
+      image: ASSETS.heroMain,
+      label: 'Parent story',
+      title: 'A parent shares the change',
+      course: 'Kids English Speaking Course (Ages 4–14)',
+    },
+    {
+      image: ASSETS.womenEnglish,
+      label: 'Women’s progress',
+      title: 'A woman finds her voice',
+      course: 'Female English Speaking Course',
+    },
   ];
 
   const activePreview: PreviewImage | null =
@@ -909,21 +923,17 @@ export function StoriesSection() {
       ? {
           name: `${stories[previewIdx].title} (${stories[previewIdx].label})`,
           url: stories[previewIdx].image,
+          course: stories[previewIdx].course,
         }
       : null;
 
   return (
-    <section className="section" id="voices">
+    <FadeInUp as="section" className="section" id="voices">
       <div className="shell">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        >
+        <FadeInUp y={16}>
           <span className="eyebrow">Real student voices</span>
           <h2 className="section-heading">Confidence you can hear</h2>
-        </motion.div>
+        </FadeInUp>
 
         <div className="story-grid mt-9">
           {stories.map((story, idx) => (
@@ -935,6 +945,7 @@ export function StoriesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={VIEWPORT_ONCE}
               transition={{ duration: 0.45, delay: idx * 0.08, ease: EASE_OUT_EXPO }}
+              whileHover={{ y: -4 }}
               className="story text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="media-frame rounded-[14px]">
@@ -968,7 +979,7 @@ export function StoriesSection() {
           setPreviewIdx((prev) => (prev === null ? null : (prev + 1) % stories.length))
         }
       />
-    </section>
+    </FadeInUp>
   );
 }
 
@@ -976,14 +987,9 @@ export function GlobalClassroomSection() {
   const regions = ['Pakistan', 'UAE', 'Saudi Arabia', 'United Kingdom', 'More soon'];
 
   return (
-    <section className="section section-coral">
+    <FadeInUp as="section" className="section section-coral">
       <div className="shell split">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        >
+        <FadeInUp y={18}>
           <span className="eyebrow">Our global classroom</span>
           <h2 className="section-heading">Learn English from anywhere in the world.</h2>
           <p className="section-intro">
@@ -996,44 +1002,35 @@ export function GlobalClassroomSection() {
               </span>
             ))}
           </div>
-        </motion.div>
+        </FadeInUp>
 
-        <motion.img
-          initial={{ opacity: 0, scale: 0.97 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
-          src={ASSETS.globalClassroom}
-          alt="Women joining an online English class from different locations"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-        />
+        <FadeInUp delay={0.1} y={18}>
+          <img
+            src={ASSETS.globalClassroom}
+            alt="Women joining an online English class from different locations"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        </FadeInUp>
       </div>
-    </section>
+    </FadeInUp>
   );
 }
 
 export function TeachersSection() {
   return (
-    <section className="section" id="teachers">
+    <FadeInUp as="section" className="section" id="teachers">
       <div className="shell split">
-        <motion.img
-          initial={{ opacity: 0, scale: 0.97 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
-          src={ASSETS.teachers}
-          alt="The Language Spoken House teaching team"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-        />
+        <FadeInUp y={18}>
+          <img
+            src={ASSETS.teachers}
+            alt="The Language Spoken House teaching team"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        </FadeInUp>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        >
+        <FadeInUp delay={0.1} y={18}>
           <span className="eyebrow">Meet your guides</span>
           <h2 className="section-heading">
             Expert teachers.
@@ -1052,36 +1049,34 @@ export function TeachersSection() {
           <div className="mt-7">
             <EnrollButton label="Meet a teacher" />
           </div>
-        </motion.div>
+        </FadeInUp>
       </div>
-    </section>
+    </FadeInUp>
   );
 }
 
 export function ContactSection() {
+  const { openBookingModal } = useBookingModal();
+
   return (
-    <section className="section contact" id="contact">
+    <FadeInUp as="section" className="section contact" id="contact">
       <div className="shell">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={VIEWPORT_ONCE}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-          className="contact-panel"
-        >
+        <div className="contact-panel">
           <span className="eyebrow">Your first conversation starts here</span>
           <h2 className="section-heading">Your Journey Starts Here</h2>
           <p className="section-intro">
-            Limited seats. Message us on WhatsApp or call to book your free trial class. Meet a
-            teacher, experience the class, and find the right program without pressure.
+            Limited seats. Fill out your quick student details to message us on WhatsApp or call
+            to book your free trial class without pressure.
           </p>
 
           <div className="contact-actions">
-            <Button size="lg" asChild>
-              <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-                <MessageCircle />
-                WhatsApp 0307-5882858
-              </a>
+            <Button
+              size="lg"
+              type="button"
+              onClick={() => openBookingModal('Free Trial Consultation / General Inquiry')}
+            >
+              <MessageCircle />
+              WhatsApp {WHATSAPP_DISPLAY}
             </Button>
             <Button size="lg" variant="outline" asChild>
               <a href={PHONE_URL}>
@@ -1097,9 +1092,9 @@ export function ContactSection() {
             <span>Career Growth</span>
             <span>Flexible Learning</span>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </section>
+    </FadeInUp>
   );
 }
 
@@ -1132,19 +1127,26 @@ export function KidsAgePathsSection() {
   const active = levels[selected] ?? levels[0];
 
   return (
-    <section className="section section-muted">
+    <FadeInUp as="section" className="section section-muted">
       <div className="shell">
-        <span className="eyebrow">Growing confidence at every age</span>
-        <h2 className="section-heading">A path for every young speaker</h2>
+        <FadeInUp y={16}>
+          <span className="eyebrow">Growing confidence at every age</span>
+          <h2 className="section-heading">A path for every young speaker</h2>
+        </FadeInUp>
 
         <div className="feature-grid">
           {levels.map((level, idx) => {
             const isSelected = selected === idx;
             return (
-              <button
+              <motion.button
                 key={level.name}
                 type="button"
                 onClick={() => setSelected(idx)}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={VIEWPORT_ONCE}
+                transition={{ duration: 0.4, delay: idx * 0.06, ease: EASE_OUT_EXPO }}
+                whileHover={{ y: -3 }}
                 className={`feature text-left cursor-pointer ${
                   isSelected ? '!border-primary/60 bg-primary/[0.06]' : ''
                 }`}
@@ -1154,7 +1156,7 @@ export function KidsAgePathsSection() {
                 </div>
                 <h3>{level.name}</h3>
                 <span className="tag mt-2">{level.tag}</span>
-              </button>
+              </motion.button>
             );
           })}
         </div>
@@ -1176,6 +1178,6 @@ export function KidsAgePathsSection() {
           </div>
         </motion.div>
       </div>
-    </section>
+    </FadeInUp>
   );
 }

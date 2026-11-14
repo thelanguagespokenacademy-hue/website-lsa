@@ -128,7 +128,7 @@ h4 {
 .path,
 .feature,
 .course-card,
-.ai-card,
+.track-card,
 .skill,
 .step,
 .story,
@@ -339,7 +339,7 @@ h4 {
   margin-bottom: 12px;
   font-size: 11px;
   font-weight: 700;
-  display: inline-block;
+  display: block;
 }
 
 .live-label {
@@ -579,7 +579,7 @@ h4 {
   padding: 28px;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .path::before {
@@ -594,7 +594,6 @@ h4 {
 .path:hover {
   border-color: rgba(188, 239, 18, 0.45);
   box-shadow: var(--shadow-soft);
-  transform: translateY(-4px);
 }
 
 .path-top {
@@ -658,12 +657,11 @@ h4 {
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 20px;
   padding: 26px;
-  transition: border-color 0.25s, transform 0.25s;
+  transition: border-color 0.25s, background-color 0.25s;
 }
 
 .feature:hover {
   border-color: rgba(188, 239, 18, 0.35);
-  transform: translateY(-3px);
 }
 
 .feature-icon-box {
@@ -830,14 +828,14 @@ h4 {
   height: 100%;
 }
 
-/* AI Branch */
-.ai-grid {
+/* Communication Tracks */
+.track-grid {
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
   display: grid;
 }
 
-.ai-card {
+.track-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: var(--card);
   border-radius: 22px;
@@ -845,7 +843,7 @@ h4 {
   position: relative;
 }
 
-.ai-card::before {
+.track-card::before {
   content: "";
   position: absolute;
   inset-inline: 0;
@@ -855,33 +853,33 @@ h4 {
   background: linear-gradient(90deg, rgba(188, 239, 18, 0.85), rgba(188, 239, 18, 0.2));
 }
 
-.ai-poster {
+.track-poster {
   aspect-ratio: 1;
   object-fit: cover;
   width: 100%;
   transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ai-card:hover .ai-poster {
+.track-card:hover .track-poster {
   transform: scale(1.04);
 }
 
-.ai-body {
+.track-body {
   padding: 25px;
 }
 
-.ai-body h3 {
+.track-body h3 {
   margin: 10px 0;
   font-size: 23px;
   color: var(--foreground);
 }
 
-.ai-body p {
+.track-body p {
   color: var(--muted-foreground);
   font-size: 13px;
 }
 
-.ai-body > a {
+.track-body > a {
   margin-top: 20px;
 }
 
@@ -1282,31 +1280,46 @@ h4 {
 }
 
 .page-title {
-  padding: 65px 0 0;
-  animation: 0.7s ease-out both welcome-in;
+  padding-top: 56px;
+  padding-bottom: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .page-title h1 {
   margin: 0;
-  font-size: clamp(2rem, 4.5vw, 3rem);
-  background: linear-gradient(90deg, #ffffff 0%, #e4e4e7 60%, #bcef12 100%);
+  font-size: clamp(2.1rem, 4.6vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  background: linear-gradient(90deg, #ffffff 0%, #e4e4e7 55%, #bcef12 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.page-title a {
+.page-title .back-link {
   color: var(--muted-foreground);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px 14px;
   align-items: center;
   gap: 8px;
-  margin-bottom: 25px;
+  margin-bottom: 24px;
   font-size: 12px;
+  font-weight: 600;
   display: inline-flex;
-  transition: color 0.2s;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
-.page-title a:hover {
+.page-title .back-link:hover {
   color: var(--primary);
+  border-color: rgba(188, 239, 18, 0.4);
+  background: rgba(188, 239, 18, 0.08);
 }
 
 .drawer-links {
@@ -1343,7 +1356,7 @@ h4 {
 .image-dialog img {
   object-fit: contain;
   max-width: 100%;
-  max-height: 75svh;
+  max-height: 64svh;
   margin: auto;
   border-radius: 10px;
 }
@@ -1373,7 +1386,7 @@ h4 {
   }
 
   .path-grid,
-  .ai-grid,
+  .track-grid,
   .journey-grid,
   .story-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1479,7 +1492,7 @@ h4 {
   .path-grid,
   .feature-grid,
   .course-grid,
-  .ai-grid,
+  .track-grid,
   .journey-grid,
   .story-grid,
   .split,
@@ -1597,7 +1610,8 @@ h4 {
   }
 
   .page-title {
-    padding-top: 36px;
+    padding-top: 32px;
+    padding-bottom: 28px;
   }
 
   .floating-wa span {
@@ -1645,33 +1659,32 @@ h4 {
 }
 
 .course-card,
-.ai-card,
+.track-card,
 .cert-card {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s, border-color 0.3s;
+  transition: box-shadow 0.3s, border-color 0.3s;
 }
 
 .text-link svg,
 .hero-actions svg,
 .contact-actions svg,
 .course-bottom svg,
-.ai-body a svg {
+.track-body a svg {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (hover: hover) {
   .course-card:hover,
-  .ai-card:hover,
+  .track-card:hover,
   .cert-card:hover {
     border-color: rgba(188, 239, 18, 0.48);
     box-shadow: var(--shadow-soft);
-    transform: translateY(-5px);
   }
 
   .text-link:hover svg,
   .hero-actions a:hover svg,
   .contact-actions a:hover svg,
   .course-bottom a:hover svg,
-  .ai-body a:hover svg {
+  .track-body a:hover svg {
     transform: translate(4px);
   }
 }

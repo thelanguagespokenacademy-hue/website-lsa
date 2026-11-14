@@ -1,5 +1,7 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
+import { BookingProvider } from './lib/bookingContext';
 import { Link, RouterProvider, usePathname } from './lib/router';
+import { BookingForm, BookingModal } from './components/BookingForm';
 import { WelcomeDemoModal } from './components/ui/Modal';
 import {
   FloatingWhatsAppButton,
@@ -8,7 +10,6 @@ import {
   SiteHeader,
 } from './components/Layout';
 import {
-  AiProgramsSection,
   BenefitsBar,
   CertificatesSection,
   ContactSection,
@@ -19,6 +20,7 @@ import {
   KidsAgePathsSection,
   PageTitle,
   ShowcaseMarquee,
+  SpokenSkillsSection,
   StoriesSection,
   TeachersSection,
   WhoAreYouSection,
@@ -35,7 +37,7 @@ function HomePage() {
       <WhySection />
       <div id="programs">
         <EnglishProgramsSection />
-        <AiProgramsSection />
+        <SpokenSkillsSection />
       </div>
       <JourneySection />
       <CertificatesSection />
@@ -58,16 +60,6 @@ function AboutPage() {
   );
 }
 
-function AiPage() {
-  return (
-    <main>
-      <PageTitle title="Build with AI" eyebrow="AI Branch" />
-      <AiProgramsSection />
-      <ContactSection />
-    </main>
-  );
-}
-
 function CertificatesPage() {
   return (
     <main>
@@ -82,6 +74,21 @@ function ContactPage() {
   return (
     <main>
       <PageTitle title="Ready to start speaking?" eyebrow="Book your free demo" />
+      <section className="section">
+        <div className="shell">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-primary/25 bg-[#0b0d09]/95 p-5 sm:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
+            <span className="eyebrow">Student &amp; Parent Registration</span>
+            <h2 className="section-heading !text-2xl sm:!text-3xl">
+              Enter Details &amp; Continue on WhatsApp
+            </h2>
+            <p className="section-intro mb-6">
+              Share student name, age, education level, and contact number so our team can book your
+              1-day free trial class directly on WhatsApp (+92 348 3452142).
+            </p>
+            <BookingForm />
+          </div>
+        </div>
+      </section>
       <ContactSection />
       <WhoAreYouSection />
     </main>
@@ -124,7 +131,7 @@ function ProgramsPage() {
     <main>
       <PageTitle title="Our programs" eyebrow="Find your path" />
       <EnglishProgramsSection />
-      <AiProgramsSection />
+      <SpokenSkillsSection />
       <ContactSection />
     </main>
   );
@@ -178,8 +185,6 @@ function renderRoute(pathname: string) {
       return <HomePage />;
     case '/about':
       return <AboutPage />;
-    case '/ai':
-      return <AiPage />;
     case '/certificates':
       return <CertificatesPage />;
     case '/contact':
@@ -223,13 +228,16 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <RouterProvider>
-        <div className="ambient-backdrop" aria-hidden="true" />
-        <SiteHeader />
-        <RouteView />
-        <MotionAndMetaEffect />
-        <SiteFooter />
-        <FloatingWhatsAppButton />
-        <WelcomeDemoModal />
+        <BookingProvider>
+          <div className="ambient-backdrop" aria-hidden="true" />
+          <SiteHeader />
+          <RouteView />
+          <MotionAndMetaEffect />
+          <SiteFooter />
+          <FloatingWhatsAppButton />
+          <WelcomeDemoModal />
+          <BookingModal />
+        </BookingProvider>
       </RouterProvider>
     </MotionConfig>
   );

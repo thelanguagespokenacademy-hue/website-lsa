@@ -14,7 +14,8 @@ import {
   X,
 } from 'lucide-react';
 import { Link, usePathname } from '../../lib/router';
-import { ASSETS, WHATSAPP_URL } from '../../data/siteData';
+import { useBookingModal } from '../../lib/bookingContext';
+import { ASSETS } from '../../data/siteData';
 
 interface NavDrawerProps {
   open: boolean;
@@ -24,8 +25,8 @@ interface NavDrawerProps {
 const DRAWER_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/programs', label: 'Programs' },
+  { to: '/kids-program', label: 'Kids Spoken English' },
   { to: '/english', label: 'English Courses' },
-  { to: '/ai', label: 'AI Courses' },
   { to: '/about', label: 'Our difference' },
   { to: '/journey', label: 'Your journey' },
   { to: '/stories', label: 'Student voices' },
@@ -117,6 +118,7 @@ export function NavDrawer({ open, onOpenChange }: NavDrawerProps) {
 export interface PreviewImage {
   name: string;
   url: string;
+  course?: string;
 }
 
 interface ImageDialogProps {
@@ -127,6 +129,8 @@ interface ImageDialogProps {
 }
 
 export function ImageDialog({ preview, onClose, onPrev, onNext }: ImageDialogProps) {
+  const { openBookingModal } = useBookingModal();
+
   useEffect(() => {
     if (!preview) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -219,6 +223,34 @@ export function ImageDialog({ preview, onClose, onPrev, onNext }: ImageDialogPro
               alt={preview.name}
               referrerPolicy="no-referrer"
             />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-white/10">
+              <p className="text-xs text-muted-foreground">
+                1-day free trial class · Live online small batches (6–8 students)
+              </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 text-foreground font-semibold text-xs sm:text-sm h-10 px-4 cursor-pointer hover:bg-white/10 transition-colors"
+                >
+                  Close
+                </button>
+                <motion.button
+                  type="button"
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    const targetCourse = preview.course;
+                    onClose();
+                    openBookingModal(targetCourse);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs sm:text-sm h-10 px-5 shadow-[0_8px_24px_rgba(188,239,18,0.28)] cursor-pointer hover:bg-primary/90 transition-colors"
+                >
+                  Enroll Now <ArrowRight className="h-4 w-4 shrink-0" />
+                </motion.button>
+              </div>
+            </div>
           </motion.div>
         </div>
       )}
@@ -235,6 +267,7 @@ const FEE_OPTIONS = [
     title: 'Ages 4 to 6',
     price: 'Rs. 133/Day',
     sub: '20 Classes · Rs. 2,660',
+    courseOption: 'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
   },
   {
     id: 'ages-7-9',
@@ -242,6 +275,7 @@ const FEE_OPTIONS = [
     title: 'Ages 7 to 9',
     price: 'Rs. 145/Day',
     sub: '20 Classes · Rs. 2,900',
+    courseOption: 'Kids Spoken English Program (Ages 7–9 · Rs. 145/Day)',
   },
   {
     id: 'ages-10-14',
@@ -249,10 +283,12 @@ const FEE_OPTIONS = [
     title: 'Ages 10 to 14',
     price: 'Rs. 155/Day',
     sub: '20 Classes · Rs. 3,100',
+    courseOption: 'Kids Spoken English Program (Ages 10–14 · Rs. 155/Day)',
   },
 ] as const;
 
 export function WelcomeDemoModal() {
+  const { openBookingModal } = useBookingModal();
   const [open, setOpen] = useState<boolean>(() => {
     try {
       return sessionStorage.getItem(WELCOME_SESSION_KEY) !== '1';
@@ -287,9 +323,10 @@ export function WelcomeDemoModal() {
   }, [open]);
 
   const activeTier = FEE_OPTIONS.find((item) => item.id === selectedId) ?? FEE_OPTIONS[0];
-  const whatsappDemoHref = `${WHATSAPP_URL}?text=${encodeURIComponent(
-    `Hello! I’m interested in the Kids Spoken English Program (${activeTier.title} — ${activeTier.price}, ${activeTier.sub}). I would like to book a free trial demo class.`
-  )}`;
+  const handleBookDemoClick = () => {
+    handleClose();
+    openBookingModal(activeTier.courseOption);
+  };
 
   return (
     <AnimatePresence>
@@ -419,17 +456,15 @@ export function WelcomeDemoModal() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4 sm:mt-5">
-              <motion.a
+              <motion.button
+                type="button"
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                href={whatsappDemoHref}
-                target="_blank"
-                rel="noreferrer"
-                onClick={handleClose}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm h-11 px-5 shadow-[0_8px_24px_rgba(188,239,18,0.28)] hover:bg-primary/90 transition-colors"
+                onClick={handleBookDemoClick}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm h-11 px-5 shadow-[0_8px_24px_rgba(188,239,18,0.28)] cursor-pointer hover:bg-primary/90 transition-colors"
               >
                 Book Free Demo <ArrowRight className="h-4 w-4 shrink-0" />
-              </motion.a>
+              </motion.button>
               <button
                 type="button"
                 onClick={handleClose}
