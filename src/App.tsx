@@ -2,7 +2,10 @@ import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { BookingProvider } from './lib/bookingContext';
 import { Link, RouterProvider, usePathname } from './lib/router';
 import { BookingForm, BookingModal } from './components/BookingForm';
-import { WelcomeDemoModal } from './components/ui/Modal';
+import { AnalyticsTracker } from './components/AnalyticsTracker';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { EMAIL_DISPLAY, EMAIL_URL, WHATSAPP_DISPLAY } from './data/siteData';
 import {
   FloatingWhatsAppButton,
   MotionAndMetaEffect,
@@ -12,6 +15,7 @@ import {
 import {
   BenefitsBar,
   CertificatesSection,
+  ClassworkExercisesSection,
   ContactSection,
   EnglishProgramsSection,
   GlobalClassroomSection,
@@ -32,9 +36,10 @@ function HomePage() {
     <main>
       <HeroSlider />
       <BenefitsBar />
+      <WhySection />
+      <ClassworkExercisesSection tone="muted" />
       <ShowcaseMarquee />
       <WhoAreYouSection />
-      <WhySection />
       <div id="programs">
         <EnglishProgramsSection />
         <SpokenSkillsSection />
@@ -54,6 +59,7 @@ function AboutPage() {
     <main>
       <PageTitle title="Our difference" eyebrow="Why Language Spoken House?" />
       <WhySection />
+      <ClassworkExercisesSection tone="muted" />
       <GlobalClassroomSection />
       <ContactSection />
     </main>
@@ -83,7 +89,11 @@ function ContactPage() {
             </h2>
             <p className="section-intro mb-6">
               Share student name, age, education level, and contact number so our team can book your
-              1-day free trial class directly on WhatsApp (+92 348 3452142).
+              1-day free trial class directly on WhatsApp ({WHATSAPP_DISPLAY}) or via{' '}
+              <a href={EMAIL_URL} className="text-primary hover:underline font-medium">
+                {EMAIL_DISPLAY}
+              </a>
+              .
             </p>
             <BookingForm />
           </div>
@@ -132,6 +142,7 @@ function ProgramsPage() {
       <PageTitle title="Our programs" eyebrow="Find your path" />
       <EnglishProgramsSection />
       <SpokenSkillsSection />
+      <ClassworkExercisesSection />
       <ContactSection />
     </main>
   );
@@ -153,6 +164,15 @@ function TeachersPage() {
       <PageTitle title="Our teachers" eyebrow="Meet your guides" />
       <TeachersSection />
       <ContactSection />
+    </main>
+  );
+}
+
+function AnalyticsPage() {
+  return (
+    <main>
+      <PageTitle title="User Interest Insights" eyebrow="Click & Screen Analytics" />
+      <AnalyticsDashboard />
     </main>
   );
 }
@@ -201,6 +221,8 @@ function renderRoute(pathname: string) {
       return <StoriesPage />;
     case '/teachers':
       return <TeachersPage />;
+    case '/analytics':
+      return <AnalyticsPage />;
     default:
       return <NotFoundPage />;
   }
@@ -226,19 +248,21 @@ function RouteView() {
 
 export default function App() {
   return (
-    <MotionConfig reducedMotion="user">
-      <RouterProvider>
-        <BookingProvider>
-          <div className="ambient-backdrop" aria-hidden="true" />
-          <SiteHeader />
-          <RouteView />
-          <MotionAndMetaEffect />
-          <SiteFooter />
-          <FloatingWhatsAppButton />
-          <WelcomeDemoModal />
-          <BookingModal />
-        </BookingProvider>
-      </RouterProvider>
-    </MotionConfig>
+    <ErrorBoundary>
+      <MotionConfig reducedMotion="user">
+        <RouterProvider>
+          <BookingProvider>
+            <AnalyticsTracker />
+            <div className="ambient-backdrop" aria-hidden="true" />
+            <SiteHeader />
+            <RouteView />
+            <MotionAndMetaEffect />
+            <SiteFooter />
+            <FloatingWhatsAppButton />
+            <BookingModal />
+          </BookingProvider>
+        </RouterProvider>
+      </MotionConfig>
+    </ErrorBoundary>
   );
 }

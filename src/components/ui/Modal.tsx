@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Link, usePathname } from '../../lib/router';
 import { useBookingModal } from '../../lib/bookingContext';
+import { inferInterestCategory, trackEvent } from '../../lib/analytics';
 import { ASSETS } from '../../data/siteData';
 
 interface NavDrawerProps {
@@ -40,6 +41,12 @@ export function NavDrawer({ open, onOpenChange }: NavDrawerProps) {
 
   useEffect(() => {
     if (!open) return;
+    trackEvent({
+      eventType: 'modal_open',
+      eventName: 'open_nav_drawer',
+      label: 'Navigation Menu Drawer',
+      interestCategory: 'general_info',
+    });
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onOpenChange(false);
     };
@@ -133,6 +140,17 @@ export function ImageDialog({ preview, onClose, onPrev, onNext }: ImageDialogPro
 
   useEffect(() => {
     if (!preview) return;
+    trackEvent({
+      eventType: 'modal_open',
+      eventName: 'open_image_preview',
+      label: preview.name,
+      interestCategory: inferInterestCategory({
+        text: preview.name,
+        course: preview.course,
+        screen: window.location.pathname,
+      }),
+      course: preview.course,
+    });
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft' && onPrev) onPrev();
@@ -240,6 +258,9 @@ export function ImageDialog({ preview, onClose, onPrev, onNext }: ImageDialogPro
                   type="button"
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
+                  data-track-name="image_dialog_enroll"
+                  data-track-label={`Enroll Now (${preview.name})`}
+                  data-track-course={preview.course}
                   onClick={() => {
                     const targetCourse = preview.course;
                     onClose();
@@ -301,6 +322,12 @@ export function WelcomeDemoModal() {
 
   const handleClose = () => {
     setOpen(false);
+    trackEvent({
+      eventType: 'modal_close',
+      eventName: 'close_welcome_demo_modal',
+      label: 'Dismiss Kids Welcome Modal',
+      interestCategory: 'kids_program',
+    });
     try {
       sessionStorage.setItem(WELCOME_SESSION_KEY, '1');
     } catch {
@@ -310,6 +337,12 @@ export function WelcomeDemoModal() {
 
   useEffect(() => {
     if (!open) return;
+    trackEvent({
+      eventType: 'modal_open',
+      eventName: 'open_welcome_demo_modal',
+      label: 'Kids Welcome Demo Modal',
+      interestCategory: 'kids_program',
+    });
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleClose();
     };
@@ -324,7 +357,19 @@ export function WelcomeDemoModal() {
 
   const activeTier = FEE_OPTIONS.find((item) => item.id === selectedId) ?? FEE_OPTIONS[0];
   const handleBookDemoClick = () => {
-    handleClose();
+    trackEvent({
+      eventType: 'button_click',
+      eventName: 'welcome_modal_book_demo',
+      label: `Book Free Demo (${activeTier.title})`,
+      interestCategory: 'kids_program',
+      course: activeTier.courseOption,
+    });
+    setOpen(false);
+    try {
+      sessionStorage.setItem(WELCOME_SESSION_KEY, '1');
+    } catch {
+      // ignore storage errors
+    }
     openBookingModal(activeTier.courseOption);
   };
 
@@ -355,6 +400,7 @@ export function WelcomeDemoModal() {
             <button
               type="button"
               onClick={handleClose}
+              data-track-explicit="true"
               className="absolute right-3 top-3 sm:right-3.5 sm:top-3.5 rounded-full bg-white/10 p-2 text-muted-foreground cursor-pointer transition-colors hover:bg-white/20 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Close"
             >
@@ -398,6 +444,8 @@ export function WelcomeDemoModal() {
               <button
                 type="button"
                 onClick={() => setPosterExpanded((prev) => !prev)}
+                data-track-name="welcome_poster_zoom"
+                data-track-interest="kids_program"
                 className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-lg bg-black/75 border border-white/15 px-2.5 py-1.5 text-[11px] font-semibold text-foreground backdrop-blur-md cursor-pointer hover:border-primary/50 hover:text-primary transition-colors"
                 aria-label={posterExpanded ? 'Shrink poster' : 'Expand poster'}
               >
@@ -423,7 +471,17 @@ export function WelcomeDemoModal() {
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() => setSelectedId(opt.id)}
+                    onClick={() => {
+                      setSelectedId(opt.id);
+                      trackEvent({
+                        eventType: 'tab_select',
+                        eventName: `select_welcome_tier_${opt.id}`,
+                        label: `${opt.title} (${opt.price})`,
+                        interestCategory: 'kids_program',
+                        course: opt.courseOption,
+                      });
+                    }}
+                    data-track-explicit="true"
                     aria-pressed={isSelected}
                     className={`relative rounded-xl border px-3 py-2.5 text-center cursor-pointer transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       isSelected
@@ -461,6 +519,7 @@ export function WelcomeDemoModal() {
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleBookDemoClick}
+                data-track-explicit="true"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm h-11 px-5 shadow-[0_8px_24px_rgba(188,239,18,0.28)] cursor-pointer hover:bg-primary/90 transition-colors"
               >
                 Book Free Demo <ArrowRight className="h-4 w-4 shrink-0" />
@@ -468,6 +527,7 @@ export function WelcomeDemoModal() {
               <button
                 type="button"
                 onClick={handleClose}
+                data-track-explicit="true"
                 className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 text-foreground font-semibold text-sm h-11 px-5 cursor-pointer hover:bg-white/10 transition-colors"
               >
                 Maybe Later

@@ -4,7 +4,9 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
   GraduationCap,
+  Mail,
   MapPin,
   MessageCircle,
   Phone,
@@ -13,8 +15,15 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { COURSE_OPTIONS, WHATSAPP_DISPLAY, WHATSAPP_URL } from '../data/siteData';
+import {
+  COURSE_OPTIONS,
+  EMAIL_DISPLAY,
+  EMAIL_URL,
+  WHATSAPP_DISPLAY,
+  WHATSAPP_URL,
+} from '../data/siteData';
 import { useBookingModal } from '../lib/bookingContext';
+import { inferInterestCategory, trackEvent } from '../lib/analytics';
 
 interface BookingFormState {
   studentName: string;
@@ -60,7 +69,7 @@ function getEffectiveEducation(form: BookingFormState): string {
   return form.education === 'Other' ? form.customEducation.trim() : form.education.trim();
 }
 
-function buildWhatsAppUrl(form: BookingFormState): string {
+function buildRegistrationMessage(form: BookingFormState): string {
   const educationLabel = getEffectiveEducation(form);
   const lines = [
     'Assalam-o-Alaikum! I would like to register / book a Free Trial Demo Class at Language Spoken House.',
@@ -74,7 +83,18 @@ function buildWhatsAppUrl(form: BookingFormState): string {
     ...(form.city.trim() ? [`• City / Country: ${form.city.trim()}`] : []),
     ...(form.notes.trim() ? [`• Learning Goal: ${form.notes.trim()}`] : []),
   ];
-  return `${WHATSAPP_URL}?text=${encodeURIComponent(lines.join('\n'))}`;
+  return lines.join('\n');
+}
+
+function buildWhatsAppUrl(form: BookingFormState): string {
+  return `${WHATSAPP_URL}?text=${encodeURIComponent(buildRegistrationMessage(form))}`;
+}
+
+function buildEmailUrl(form: BookingFormState): string {
+  const subject = `Free Trial Demo Registration — ${form.studentName.trim() || 'Student'}`;
+  return `${EMAIL_URL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+    buildRegistrationMessage(form)
+  )}`;
 }
 
 export function BookingForm({
@@ -115,6 +135,7 @@ export function BookingForm({
   }, [resolvedCourse]);
 
   const whatsappHref = useMemo(() => buildWhatsAppUrl(form), [form]);
+  const emailHref = useMemo(() => buildEmailUrl(form), [form]);
 
   const updateField = <K extends keyof BookingFormState>(field: K, value: BookingFormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -149,10 +170,30 @@ export function BookingForm({
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      trackEvent({
+        eventType: 'button_click',
+        eventName: 'booking_validation_error',
+        label: 'Continue to WhatsApp (Validation Incomplete)',
+        interestCategory: 'trial_booking',
+        course: form.course,
+        metadata: `missing:${Object.keys(validationErrors).join(',')}`,
+      });
       return;
     }
     setErrors({});
     setSubmitted(true);
+    trackEvent({
+      eventType: 'form_submit',
+      eventName: 'submit_whatsapp_booking',
+      label: `Submit Free Trial (${form.course})`,
+      interestCategory: inferInterestCategory({
+        course: form.course,
+        text: form.course,
+        screen: window.location.pathname,
+      }),
+      course: form.course,
+      metadata: form.education ? `education:${form.education}` : undefined,
+    });
     waAnchorRef.current?.click();
   };
 
@@ -224,18 +265,41 @@ export function BookingForm({
                 target="_blank"
                 rel="noreferrer"
                 onClick={onCompleted}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm h-11 px-5 shadow-[0_8px_24px_rgba(188,239,18,0.28)] hover:bg-primary/90 transition-colors"
+                data-track-name="outbound_whatsapp_send"
+                data-track-label={`Send on WhatsApp (${form.course})`}
+                data-track-interest="trial_booking"
+                data-track-course={form.course}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm min-h-11 py-2.5 px-4 shadow-[0_8px_24px_rgba(188,239,18,0.28)] hover:bg-primary/90 transition-colors text-center"
               >
                 <MessageCircle className="h-4 w-4 shrink-0" />
-                Send on WhatsApp ({WHATSAPP_DISPLAY})
+                <span className="inline-flex flex-wrap items-center justify-center gap-x-1">
+                  <span>Send on WhatsApp</span>
+                  <span className="whitespace-nowrap">({WHATSAPP_DISPLAY})</span>
+                </span>
               </a>
               <button
                 type="button"
                 onClick={() => setSubmitted(false)}
-                className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 text-foreground font-semibold text-sm h-11 px-5 cursor-pointer hover:bg-white/10 transition-colors"
+                data-track-name="btn_edit_booking_details"
+                data-track-interest="trial_booking"
+                className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 text-foreground font-semibold text-sm min-h-11 py-2.5 px-5 cursor-pointer hover:bg-white/10 transition-colors"
               >
                 Edit Details
               </button>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <a
+                href={emailHref}
+                data-track-name="outbound_email_booking"
+                data-track-label={`Send via Email (${form.course})`}
+                data-track-interest="contact"
+                data-track-course={form.course}
+                className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Mail className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span>Or send via Email: {EMAIL_DISPLAY}</span>
+              </a>
             </div>
           </motion.div>
         ) : (
@@ -261,8 +325,22 @@ export function BookingForm({
                 <select
                   id="booking-course"
                   value={form.course}
-                  onChange={(e) => updateField('course', e.target.value)}
-                  className="w-full h-11 rounded-xl border border-white/15 bg-[#110f0f] pl-10 pr-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors"
+                  onChange={(e) => {
+                    const nextCourse = e.target.value;
+                    updateField('course', nextCourse);
+                    trackEvent({
+                      eventType: 'tab_select',
+                      eventName: 'select_booking_program',
+                      label: `Program: ${nextCourse}`,
+                      interestCategory: inferInterestCategory({
+                        course: nextCourse,
+                        text: nextCourse,
+                        screen: window.location.pathname,
+                      }),
+                      course: nextCourse,
+                    });
+                  }}
+                  className="w-full h-11 appearance-none rounded-xl border border-white/15 bg-[#110f0f] pl-10 pr-10 text-base sm:text-sm text-foreground truncate focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors cursor-pointer"
                 >
                   {courseSelectOptions.map((option) => (
                     <option key={option} value={option} className="bg-[#110f0f] text-foreground">
@@ -270,6 +348,7 @@ export function BookingForm({
                     </option>
                   ))}
                 </select>
+                <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               </div>
             </div>
 
@@ -290,7 +369,7 @@ export function BookingForm({
                     placeholder="e.g. Ayesha Khan"
                     value={form.studentName}
                     onChange={(e) => updateField('studentName', e.target.value)}
-                    className={`w-full h-11 rounded-xl border bg-[#110f0f] pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
+                    className={`w-full h-11 rounded-xl border bg-[#110f0f] pl-10 pr-3 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
                       errors.studentName ? 'border-red-400' : 'border-white/15 focus:border-primary'
                     }`}
                   />
@@ -315,7 +394,7 @@ export function BookingForm({
                     placeholder="For kids (or Self)"
                     value={form.parentName}
                     onChange={(e) => updateField('parentName', e.target.value)}
-                    className="w-full h-11 rounded-xl border border-white/15 bg-[#110f0f] pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors"
+                    className="w-full h-11 rounded-xl border border-white/15 bg-[#110f0f] pl-10 pr-3 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors"
                   />
                 </div>
               </div>
@@ -338,7 +417,7 @@ export function BookingForm({
                   placeholder="e.g. 9"
                   value={form.age}
                   onChange={(e) => updateField('age', e.target.value)}
-                  className={`w-full h-11 rounded-xl border bg-[#110f0f] px-3.5 text-sm text-foreground tabular-nums placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
+                  className={`w-full h-11 rounded-xl border bg-[#110f0f] px-3.5 text-base sm:text-sm text-foreground tabular-nums placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
                     errors.age ? 'border-red-400' : 'border-white/15 focus:border-primary'
                   }`}
                 />
@@ -364,8 +443,20 @@ export function BookingForm({
                       if (val !== 'Other') {
                         updateField('customEducation', '');
                       }
+                      trackEvent({
+                        eventType: 'tab_select',
+                        eventName: 'select_education_level',
+                        label: `Education: ${val}`,
+                        interestCategory: inferInterestCategory({
+                          text: val,
+                          course: form.course,
+                          screen: window.location.pathname,
+                        }),
+                        course: form.course,
+                        metadata: val,
+                      });
                     }}
-                    className={`w-full h-11 rounded-xl border bg-[#110f0f] pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
+                    className={`w-full h-11 appearance-none rounded-xl border bg-[#110f0f] pl-10 pr-10 text-base sm:text-sm truncate focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors cursor-pointer ${
                       form.education ? 'text-foreground' : 'text-muted-foreground/70'
                     } ${errors.education ? 'border-red-400' : 'border-white/15 focus:border-primary'}`}
                   >
@@ -378,6 +469,7 @@ export function BookingForm({
                       </option>
                     ))}
                   </select>
+                  <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
                 {errors.education && (
                   <p className="text-[11px] text-red-400 mt-1">{errors.education}</p>
@@ -407,7 +499,7 @@ export function BookingForm({
                     placeholder="Enter your class, grade, or background"
                     value={form.customEducation}
                     onChange={(e) => updateField('customEducation', e.target.value)}
-                    className={`w-full h-11 rounded-xl border bg-[#110f0f] px-3.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
+                    className={`w-full h-11 rounded-xl border bg-[#110f0f] px-3.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
                       errors.customEducation
                         ? 'border-red-400'
                         : 'border-white/15 focus:border-primary'
@@ -437,7 +529,7 @@ export function BookingForm({
                     placeholder="+92 3XX XXXXXXX"
                     value={form.phone}
                     onChange={(e) => updateField('phone', e.target.value)}
-                    className={`w-full h-11 rounded-xl border bg-[#110f0f] pl-10 pr-3 text-sm text-foreground tabular-nums placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
+                    className={`w-full h-11 rounded-xl border bg-[#110f0f] pl-10 pr-3 text-base sm:text-sm text-foreground tabular-nums placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors ${
                       errors.phone ? 'border-red-400' : 'border-white/15 focus:border-primary'
                     }`}
                   />
@@ -460,7 +552,7 @@ export function BookingForm({
                     placeholder="e.g. Lahore, UAE, UK"
                     value={form.city}
                     onChange={(e) => updateField('city', e.target.value)}
-                    className="w-full h-11 rounded-xl border border-white/15 bg-[#110f0f] pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors"
+                    className="w-full h-11 rounded-xl border border-white/15 bg-[#110f0f] pl-10 pr-3 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors"
                   />
                 </div>
               </div>
@@ -480,7 +572,7 @@ export function BookingForm({
                   placeholder="Share preferred timing or speaking goals..."
                   value={form.notes}
                   onChange={(e) => updateField('notes', e.target.value)}
-                  className="w-full rounded-xl border border-white/15 bg-[#110f0f] p-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors resize-none"
+                  className="w-full rounded-xl border border-white/15 bg-[#110f0f] p-3 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors resize-none"
                 />
               </div>
             )}
@@ -489,15 +581,29 @@ export function BookingForm({
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.985 }}
               type="submit"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm h-12 px-6 shadow-[0_10px_28px_rgba(188,239,18,0.28)] cursor-pointer hover:bg-primary/90 transition-colors"
+              data-track-explicit="true"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm min-h-12 py-2.5 px-4 sm:px-6 shadow-[0_10px_28px_rgba(188,239,18,0.28)] cursor-pointer hover:bg-primary/90 transition-colors"
             >
               <MessageCircle className="h-4 w-4 shrink-0" />
-              Continue to WhatsApp ({WHATSAPP_DISPLAY})
+              <span className="inline-flex flex-wrap items-center justify-center gap-x-1.5 text-center leading-snug">
+                <span>Continue to WhatsApp</span>
+                <span className="whitespace-nowrap">({WHATSAPP_DISPLAY})</span>
+              </span>
               <ArrowRight className="h-4 w-4 shrink-0" />
             </motion.button>
 
-            <p className="text-center text-[11px] text-muted-foreground">
-              Your details will be pre-filled in WhatsApp for your 1-day free trial demo.
+            <p className="text-center text-[11px] text-muted-foreground leading-relaxed">
+              Your details will be pre-filled in WhatsApp for your 1-day free trial demo, or reach
+              us at{' '}
+              <a
+                href={EMAIL_URL}
+                data-track-name="outbound_email_link"
+                data-track-interest="contact"
+                className="text-primary hover:underline font-medium"
+              >
+                {EMAIL_DISPLAY}
+              </a>
+              .
             </p>
           </motion.form>
         )}
@@ -550,6 +656,7 @@ export function BookingModal() {
             <button
               type="button"
               onClick={closeBookingModal}
+              data-track-explicit="true"
               className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded-full bg-white/10 p-2 text-muted-foreground cursor-pointer transition-colors hover:bg-white/20 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Close"
             >

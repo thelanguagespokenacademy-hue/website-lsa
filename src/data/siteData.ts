@@ -2,7 +2,8 @@ export const WHATSAPP_NUMBER_E164 = '923483452142';
 export const WHATSAPP_DISPLAY = '+92 348 3452142';
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER_E164}`;
 export const PHONE_URL = 'tel:+923483452142';
-export const EMAIL_URL = 'mailto:rimshaofficials24@gmail.com';
+export const EMAIL_DISPLAY = 'Rimshaofficials24@gmail.com';
+export const EMAIL_URL = `mailto:${EMAIL_DISPLAY}`;
 
 export const COURSE_OPTIONS: string[] = [
   'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
@@ -28,6 +29,10 @@ export const ASSETS = {
   womenPoster1: asset('images/no-fees-female-speaking-course-reference-style-v4.jpeg'),
   womenPoster2: asset('images/no-fees-female-speaking-course-navy-gold.png'),
   kidsWelcomePoster: asset('assets/aistudio/WhatsApp_Image_2026-11-13_at_9.51.22_AM_e217f483.jpeg'),
+  studentDifferenceVideoId: 'tQhGDwCGTOw',
+  studentDifferenceYoutubeUrl: 'https://youtube.com/shorts/tQhGDwCGTOw?si=l7IbqYK09WNFZEFP',
+  studentDifferenceEmbedUrl:
+    'https://www.youtube.com/embed/tQhGDwCGTOw?autoplay=1&mute=1&loop=1&playlist=tQhGDwCGTOw&playsinline=1&rel=0&modestbranding=1&enablejsapi=1',
 };
 
 export interface HeroSlide {
@@ -156,6 +161,82 @@ export const SPOKEN_ENGLISH_SKILLS: string[] = [
   'Classroom Teaching English',
 ];
 
+export interface ClassworkVideo {
+  id: string;
+  badge: string;
+  title: string;
+  focus: string;
+  youtubeUrl: string;
+  embedUrl: string;
+}
+
+export const CLASSWORK_PILLARS = [
+  {
+    title: 'Warm-up & Vocabulary Activation',
+    text: 'Every class opens with guided prompts so students start speaking practical words in full sentences right away.',
+  },
+  {
+    title: 'Live Role-Plays & Classwork',
+    text: 'Learners practice real-life situations, pair dialogues, and interactive classroom tasks in small batches of 6–8.',
+  },
+  {
+    title: 'Daily Speaking Exercises',
+    text: 'Short, structured speaking drills build pronunciation, sentence flow, and confidence outside rote textbook work.',
+  },
+  {
+    title: 'Gentle Real-Time Correction',
+    text: 'Teachers guide tone, grammar, and fluency warmly while the student speaks—turning hesitation into natural habit.',
+  },
+] as const;
+
+export const CLASSWORK_VIDEOS: ClassworkVideo[] = [
+  {
+    id: 'GK82BZd5h4k',
+    badge: 'Classwork 01',
+    title: 'Live Speaking Exercise',
+    focus: 'Sentence formation & active classroom speaking',
+    youtubeUrl: 'https://youtube.com/shorts/GK82BZd5h4k?feature=shared',
+    embedUrl:
+      'https://www.youtube.com/embed/GK82BZd5h4k?playsinline=1&rel=0&modestbranding=1',
+  },
+  {
+    id: 'XTxNoHTPjAQ',
+    badge: 'Classwork 02',
+    title: 'Interactive Class Activity',
+    focus: 'Guided conversation & quick-response drills',
+    youtubeUrl: 'https://youtube.com/shorts/XTxNoHTPjAQ?feature=shared',
+    embedUrl:
+      'https://www.youtube.com/embed/XTxNoHTPjAQ?playsinline=1&rel=0&modestbranding=1',
+  },
+  {
+    id: '5d4DIItxCr4',
+    badge: 'Classwork 03',
+    title: 'Confidence & Fluency Drill',
+    focus: 'Clear pronunciation & expressive speaking',
+    youtubeUrl: 'https://youtube.com/shorts/5d4DIItxCr4?feature=shared',
+    embedUrl:
+      'https://www.youtube.com/embed/5d4DIItxCr4?playsinline=1&rel=0&modestbranding=1',
+  },
+  {
+    id: 'aXrUkS41oao',
+    badge: 'Classwork 04',
+    title: 'Practical Dialogue Practice',
+    focus: 'Everyday English usage with teacher feedback',
+    youtubeUrl: 'https://youtube.com/shorts/aXrUkS41oao?feature=shared',
+    embedUrl:
+      'https://www.youtube.com/embed/aXrUkS41oao?playsinline=1&rel=0&modestbranding=1',
+  },
+  {
+    id: 'xA1_XBNdQsY',
+    badge: 'Classwork 05',
+    title: 'Student Classwork Showcase',
+    focus: 'Real learner progress through daily exercises',
+    youtubeUrl: 'https://youtube.com/shorts/xA1_XBNdQsY?feature=shared',
+    embedUrl:
+      'https://www.youtube.com/embed/xA1_XBNdQsY?playsinline=1&rel=0&modestbranding=1',
+  },
+];
+
 export interface RouteMeta {
   title: string;
   description: string;
@@ -180,7 +261,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
   '/contact': {
     title: 'Book a Free Trial — Language Spoken House',
     description:
-      'Contact Language Spoken House on WhatsApp or phone at +92 348 3452142 to book a free online trial class.',
+      'Contact Language Spoken House on WhatsApp (+92 348 3452142) or email Rimshaofficials24@gmail.com to book a free online trial class.',
   },
   '/english': {
     title: 'English Speaking Courses — Language Spoken House',
@@ -211,5 +292,10 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     title: 'Our Teachers — Language Spoken House',
     description:
       'Meet the learning approach of our expert English trainers for kids, women and teacher communication.',
+  },
+  '/analytics': {
+    title: 'Interest Analytics — Language Spoken House',
+    description:
+      'View screen views, button clicks, and program interest insights for Language Spoken House.',
   },
 };

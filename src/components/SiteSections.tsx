@@ -9,24 +9,34 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  ExternalLink,
   Globe,
   GraduationCap,
   Heart,
+  Mail,
   MessageCircle,
   Mic,
   Phone,
   Play,
   Users,
   Video,
+  Volume2,
+  VolumeX,
+  X,
 } from 'lucide-react';
 import { Link } from '../lib/router';
 import { useBookingModal } from '../lib/bookingContext';
+import { inferInterestCategory, trackEvent } from '../lib/analytics';
 import { Button } from './ui/Button';
 import { FadeInUp } from './ui/FadeInUp';
 import { ImageDialog, type PreviewImage } from './ui/Modal';
 import {
   ASSETS,
   CERTIFICATES,
+  CLASSWORK_PILLARS,
+  CLASSWORK_VIDEOS,
+  EMAIL_DISPLAY,
+  EMAIL_URL,
   HERO_SLIDES,
   PHONE_URL,
   SPOKEN_ENGLISH_SKILLS,
@@ -61,9 +71,17 @@ export function EnrollButton({
   label?: string;
 }) {
   const { openBookingModal } = useBookingModal();
+  const interest = inferInterestCategory({ course: course ?? '', text: label });
 
   return (
-    <Button type="button" onClick={() => openBookingModal(course)}>
+    <Button
+      type="button"
+      onClick={() => openBookingModal(course)}
+      data-track-name={`cta_enroll_${(course || label).toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 40)}`}
+      data-track-label={course ? `${label} — ${course}` : label}
+      data-track-course={course}
+      data-track-interest={interest}
+    >
       {label}
       <ArrowRight />
     </Button>
@@ -76,8 +94,28 @@ export function HeroSlider() {
   const touchStartX = useRef<number | null>(null);
   const slide = HERO_SLIDES[index] ?? HERO_SLIDES[0];
 
-  const goNext = () => setIndex((prev) => (prev + 1) % HERO_SLIDES.length);
-  const goPrev = () => setIndex((prev) => (prev + HERO_SLIDES.length - 1) % HERO_SLIDES.length);
+  const goNext = () => {
+    const nextIdx = (index + 1) % HERO_SLIDES.length;
+    setIndex(nextIdx);
+    trackEvent({
+      eventType: 'slide_change',
+      eventName: 'hero_slide_next',
+      label: `Hero Slide ${nextIdx + 1}: ${HERO_SLIDES[nextIdx]?.title ?? ''}`,
+      interestCategory: 'general_info',
+      metadata: `slide_${nextIdx + 1}`,
+    });
+  };
+  const goPrev = () => {
+    const prevIdx = (index + HERO_SLIDES.length - 1) % HERO_SLIDES.length;
+    setIndex(prevIdx);
+    trackEvent({
+      eventType: 'slide_change',
+      eventName: 'hero_slide_prev',
+      label: `Hero Slide ${prevIdx + 1}: ${HERO_SLIDES[prevIdx]?.title ?? ''}`,
+      interestCategory: 'general_info',
+      metadata: `slide_${prevIdx + 1}`,
+    });
+  };
 
   useEffect(() => {
     if (paused) return;
@@ -148,12 +186,24 @@ export function HeroSlider() {
               <p className="hero-description">{slide.text}</p>
               <div className="hero-actions">
                 <Button size="lg" asChild>
-                  <Link to="/contact">
+                  <Link
+                    to="/contact"
+                    data-track-name="hero_book_free_demo"
+                    data-track-interest="trial_booking"
+                    data-track-meta={`slide_${index + 1}`}
+                  >
                     Book your free demo <ArrowRight />
                   </Link>
                 </Button>
                 <Button size="lg" variant="hero" asChild>
-                  <Link to="/programs">View programs</Link>
+                  <Link
+                    to="/programs"
+                    data-track-name="hero_view_programs"
+                    data-track-interest="general_info"
+                    data-track-meta={`slide_${index + 1}`}
+                  >
+                    View programs
+                  </Link>
                 </Button>
               </div>
             </motion.div>
@@ -166,7 +216,17 @@ export function HeroSlider() {
               <button
                 key={s.title}
                 type="button"
-                onClick={() => setIndex(i)}
+                onClick={() => {
+                  setIndex(i);
+                  trackEvent({
+                    eventType: 'slide_change',
+                    eventName: `hero_dot_${i + 1}`,
+                    label: `Hero Slide ${i + 1}: ${s.title}`,
+                    interestCategory: 'general_info',
+                    metadata: `slide_${i + 1}`,
+                  });
+                }}
+                data-track-explicit="true"
                 aria-label={`Go to slide ${i + 1}`}
                 className={`hero-dot ${i === index ? 'active' : ''}`}
               />
@@ -177,10 +237,22 @@ export function HeroSlider() {
             <span className="hero-counter">
               0{index + 1} / 0{HERO_SLIDES.length}
             </span>
-            <Button variant="hero" size="icon" aria-label="Previous slide" onClick={goPrev}>
+            <Button
+              variant="hero"
+              size="icon"
+              aria-label="Previous slide"
+              onClick={goPrev}
+              data-track-explicit="true"
+            >
               <ArrowLeft />
             </Button>
-            <Button variant="hero" size="icon" aria-label="Next slide" onClick={goNext}>
+            <Button
+              variant="hero"
+              size="icon"
+              aria-label="Next slide"
+              onClick={goNext}
+              data-track-explicit="true"
+            >
               <ArrowRight />
             </Button>
           </div>
@@ -280,6 +352,9 @@ export function ShowcaseMarquee() {
               type="button"
               className="marquee-tile"
               onClick={() => setPreviewIdx(idx % tiles.length)}
+              data-track-name={`marquee_tile_${tile.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`}
+              data-track-label={`Showcase: ${tile.title}`}
+              data-track-course={tile.course}
               aria-label={`Preview ${tile.title}`}
             >
               <img src={tile.url} alt={tile.title} loading="lazy" referrerPolicy="no-referrer" />
@@ -365,7 +440,19 @@ export function WhoAreYouSection() {
               </div>
               <h3>{title}</h3>
               <p>{text}</p>
-              <Link className="text-link" to={to}>
+              <Link
+                className="text-link"
+                to={to}
+                data-track-name={`audience_path_${index}`}
+                data-track-label={`${title} — ${cta}`}
+                data-track-interest={
+                  to === '/kids-program'
+                    ? 'kids_program'
+                    : to === '/english'
+                      ? 'womens_program'
+                      : 'teacher_track'
+                }
+              >
                 {cta} <ArrowRight size={16} />
               </Link>
             </motion.div>
@@ -377,6 +464,10 @@ export function WhoAreYouSection() {
 }
 
 export function WhySection() {
+  const [showStudentVideo, setShowStudentVideo] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
   const features = [
     { Icon: Mic, title: 'Speaking first', text: 'Use English from the first class.' },
     {
@@ -391,6 +482,55 @@ export function WhySection() {
     },
     { Icon: Globe, title: 'Learn from anywhere', text: 'Join a welcoming online classroom.' },
   ];
+
+  const embedSrc =
+    typeof window !== 'undefined'
+      ? `${ASSETS.studentDifferenceEmbedUrl}&origin=${encodeURIComponent(window.location.origin)}`
+      : ASSETS.studentDifferenceEmbedUrl;
+
+  const sendYouTubeCommand = (func: string) => {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    win.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
+  };
+
+  useEffect(() => {
+    if (!showStudentVideo) {
+      setIsMuted(true);
+    }
+  }, [showStudentVideo]);
+
+  const handleToggleVideo = () => {
+    const nextState = !showStudentVideo;
+    setShowStudentVideo(nextState);
+    trackEvent({
+      eventType: 'button_click',
+      eventName: nextState ? 'load_our_difference_video' : 'close_our_difference_video',
+      label: nextState
+        ? 'Show Student Difference Video'
+        : 'Hide Student Difference Video',
+      interestCategory: 'stories',
+      metadata: 'our_difference_section',
+    });
+  };
+
+  const handleToggleSound = () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    if (nextMuted) {
+      sendYouTubeCommand('mute');
+    } else {
+      sendYouTubeCommand('unMute');
+      sendYouTubeCommand('playVideo');
+    }
+    trackEvent({
+      eventType: 'button_click',
+      eventName: nextMuted ? 'mute_our_difference_video' : 'unmute_our_difference_video',
+      label: nextMuted ? 'Mute Student Video' : 'Unmute Student Video',
+      interestCategory: 'stories',
+      metadata: 'our_difference_section',
+    });
+  };
 
   return (
     <FadeInUp as="section" className="section section-coral" id="why">
@@ -426,6 +566,154 @@ export function WhySection() {
               <p>{text}</p>
             </motion.div>
           ))}
+        </div>
+
+        {/* Real student proof video shown & auto-playing by default with user toggle */}
+        <div className="mt-8 rounded-2xl border border-white/10 bg-[#110f0f]/90 p-5 sm:p-7">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1 max-w-xl">
+              <span className="eyebrow !mb-1">Real Student Proof</span>
+              <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                Hear our students speak with confidence
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Watch real Language Spoken House students share how live classes improved their
+                English fluency and confidence.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              {showStudentVideo && (
+                <Button
+                  type="button"
+                  size="lg"
+                  variant={isMuted ? 'default' : 'outline'}
+                  onClick={handleToggleSound}
+                  data-track-explicit="true"
+                >
+                  {isMuted ? (
+                    <>
+                      <Volume2 />
+                      Tap for Sound
+                    </>
+                  ) : (
+                    <>
+                      <VolumeX />
+                      Mute Sound
+                    </>
+                  )}
+                </Button>
+              )}
+
+              <Button
+                type="button"
+                size="lg"
+                variant={showStudentVideo ? 'outline' : 'default'}
+                onClick={handleToggleVideo}
+                data-track-explicit="true"
+                aria-expanded={showStudentVideo}
+                aria-controls="our-difference-student-video"
+              >
+                {showStudentVideo ? (
+                  <>
+                    <X />
+                    Hide Video
+                  </>
+                ) : (
+                  <>
+                    <Play />
+                    Watch Student Video
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <AnimatePresence initial={false}>
+            {showStudentVideo && (
+              <motion.div
+                id="our-difference-student-video"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.28, ease: EASE_OUT_EXPO }}
+                className="overflow-hidden"
+              >
+                <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-1 lg:grid-cols-[minmax(0,360px)_1fr] gap-6 items-center">
+                  <div className="mx-auto w-full max-w-[340px] rounded-2xl overflow-hidden border border-primary/25 bg-black shadow-[0_20px_50px_rgba(0,0,0,0.65)]">
+                    <iframe
+                      ref={iframeRef}
+                      src={embedSrc}
+                      title="Language Spoken House Student Speaking Proof"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                      onLoad={() => {
+                        iframeRef.current?.contentWindow?.postMessage(
+                          JSON.stringify({ event: 'listening', id: 1 }),
+                          '*'
+                        );
+                      }}
+                      className="w-full aspect-[9/16] max-h-[540px] border-0 bg-black block"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <span className="eyebrow !mb-0">Live Online Speaking Results</span>
+                    <h4 className="text-xl sm:text-2xl font-bold text-foreground">
+                      Real students, real progress from home
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+                      Every learner starts by speaking from day one in small batches of 6–8
+                      students with warm teacher guidance and supportive daily practice.
+                    </p>
+                    <ul className="space-y-2 text-xs sm:text-sm text-foreground/90">
+                      <li className="flex items-center gap-2.5">
+                        <Check size={15} className="text-primary shrink-0" />
+                        Builds natural speaking confidence without hesitation
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <Check size={15} className="text-primary shrink-0" />
+                        Interactive games, storytelling, and real-life conversation
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <Check size={15} className="text-primary shrink-0" />
+                        Try 1 free live trial class before enrolling
+                      </li>
+                    </ul>
+                    <div className="pt-2 flex flex-wrap items-center gap-3">
+                      <EnrollButton
+                        course="Kids English Speaking Course (Ages 4–14)"
+                        label="Book Free Demo"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleToggleSound}
+                        data-track-explicit="true"
+                      >
+                        {isMuted ? <Volume2 /> : <VolumeX />}
+                        {isMuted ? 'Unmute Sound' : 'Mute Sound'}
+                      </Button>
+                      <Button asChild variant="outline">
+                        <a
+                          href={ASSETS.studentDifferenceYoutubeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-track-name="our_difference_watch_on_youtube"
+                          data-track-label="Watch on YouTube"
+                          data-track-interest="stories"
+                        >
+                          <ExternalLink />
+                          Watch on YouTube
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </FadeInUp>
@@ -532,6 +820,8 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
                         variant="ghost"
                         className="poster-button"
                         aria-label={`View ${course.name} poster ${pIdx + 1}`}
+                        data-track-name={`course_poster_${pIdx + 1}`}
+                        data-track-course={course.name}
                         onClick={() => {
                           setPosterList(
                             course.posters.map((url, k) => ({
@@ -555,7 +845,12 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
                   </div>
 
                   {course.name.startsWith('Kids') && !onlyKids && (
-                    <Link to="/kids-program" className="text-link">
+                    <Link
+                      to="/kids-program"
+                      className="text-link"
+                      data-track-name="explore_kids_program"
+                      data-track-interest="kids_program"
+                    >
                       Explore kids program <ArrowRight size={16} />
                     </Link>
                   )}
@@ -702,6 +997,137 @@ export function SpokenSkillsSection() {
   );
 }
 
+export function ClassworkExercisesSection({
+  tone = 'coral',
+}: {
+  tone?: 'coral' | 'muted' | 'default';
+} = {}) {
+  const originParam =
+    typeof window !== 'undefined'
+      ? `&origin=${encodeURIComponent(window.location.origin)}`
+      : '';
+
+  const pillarIcons = [BookOpen, Users, Mic, MessageCircle];
+  const sectionClass =
+    tone === 'coral'
+      ? 'section section-coral'
+      : tone === 'muted'
+        ? 'section section-muted'
+        : 'section';
+
+  return (
+    <FadeInUp as="section" className={sectionClass} id="classwork">
+      <div className="shell">
+        <FadeInUp y={16}>
+          <span className="eyebrow">Exercises &amp; Live Classwork</span>
+          <h2 className="section-heading">
+            Practice inside class.
+            <br />
+            Speak with confidence outside.
+          </h2>
+          <p className="section-intro">
+            Every live session combines guided speaking drills, real-life role-plays, and practical
+            classwork activities so students actively use English instead of just memorizing rules.
+          </p>
+        </FadeInUp>
+
+        <div className="feature-grid">
+          {CLASSWORK_PILLARS.map((pillar, i) => {
+            const Icon = pillarIcons[i] ?? BookOpen;
+            return (
+              <motion.div
+                key={pillar.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={VIEWPORT_ONCE}
+                transition={{ duration: 0.45, delay: i * 0.07, ease: EASE_OUT_EXPO }}
+                whileHover={{ y: -3 }}
+                className="feature"
+              >
+                <div className="feature-icon-box">
+                  <Icon size={20} />
+                </div>
+                <h3>{pillar.title}</h3>
+                <p>{pillar.text}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-white/10 bg-[#110f0f]/90 p-5 sm:p-7">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div className="space-y-1 max-w-2xl">
+              <span className="eyebrow !mb-1">Inside Our Live Sessions</span>
+              <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                Watch real classwork &amp; speaking exercise clips
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Tap any clip below to see how students participate in daily spoken English
+                exercises, dialogues, and interactive classroom tasks.
+              </p>
+            </div>
+
+            <EnrollButton
+              course="Free Trial Consultation / General Inquiry"
+              label="Try 1 Free Class"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {CLASSWORK_VIDEOS.map((clip, idx) => (
+              <motion.div
+                key={clip.id}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={VIEWPORT_ONCE}
+                transition={{ duration: 0.4, delay: idx * 0.06, ease: EASE_OUT_EXPO }}
+                className="flex flex-col rounded-xl border border-white/10 bg-black/75 overflow-hidden"
+              >
+                <div className="relative w-full aspect-[9/16] bg-black border-b border-white/10">
+                  <iframe
+                    src={`${clip.embedUrl}${originParam}`}
+                    title={`${clip.badge}: ${clip.title}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                    loading="lazy"
+                    className="w-full h-full border-0 block"
+                  />
+                </div>
+
+                <div className="p-3.5 flex flex-col flex-1 justify-between gap-2.5">
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                      {clip.badge}
+                    </span>
+                    <h4 className="text-sm font-bold text-foreground leading-snug">
+                      {clip.title}
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{clip.focus}</p>
+                  </div>
+
+                  <a
+                    href={clip.youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-track-name={`classwork_video_youtube_${idx + 1}`}
+                    data-track-label={`Classwork YouTube: ${clip.badge} — ${clip.title}`}
+                    data-track-interest="stories"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline pt-1"
+                  >
+                    <ExternalLink size={12} />
+                    Watch on YouTube
+                  </a>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </FadeInUp>
+  );
+}
+
 export function JourneySection() {
   const [activeStep, setActiveStep] = useState(0);
 
@@ -734,6 +1160,9 @@ export function JourneySection() {
                 type="button"
                 onClick={() => setActiveStep(idx)}
                 onMouseEnter={() => setActiveStep(idx)}
+                data-track-name={`journey_step_${idx + 1}`}
+                data-track-label={`Journey Step ${idx + 1}: ${title}`}
+                data-track-interest="general_info"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={VIEWPORT_ONCE}
@@ -801,6 +1230,8 @@ export function CertificatesSection() {
                   type="button"
                   role="tab"
                   aria-selected={active}
+                  data-track-name={`cert_filter_${tab.id.toLowerCase()}`}
+                  data-track-interest="certificates"
                   onClick={() => {
                     setFilter(tab.id);
                     setPreviewIdx(null);
@@ -828,6 +1259,8 @@ export function CertificatesSection() {
               variant="outline"
               size="icon"
               aria-label="Scroll certificates left"
+              data-track-name="cert_scroll_left"
+              data-track-interest="certificates"
               onClick={() => scrollRail(-1)}
             >
               <ChevronLeft />
@@ -836,6 +1269,8 @@ export function CertificatesSection() {
               variant="outline"
               size="icon"
               aria-label="Scroll certificates right"
+              data-track-name="cert_scroll_right"
+              data-track-interest="certificates"
               onClick={() => scrollRail(1)}
             >
               <ChevronRight />
@@ -859,6 +1294,9 @@ export function CertificatesSection() {
                   variant="ghost"
                   className="cert-card"
                   onClick={() => setPreviewIdx(idx)}
+                  data-track-name={`cert_preview_${cert.name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`}
+                  data-track-label={`Certificate: ${cert.name} (${cert.group})`}
+                  data-track-interest="certificates"
                   aria-label={`View ${cert.name} certificate`}
                 >
                   <img
@@ -941,6 +1379,10 @@ export function StoriesSection() {
               key={story.title}
               type="button"
               onClick={() => setPreviewIdx(idx)}
+              data-track-name={`story_preview_${idx + 1}`}
+              data-track-label={`Story: ${story.title}`}
+              data-track-interest="stories"
+              data-track-course={story.course}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={VIEWPORT_ONCE}
@@ -1073,15 +1515,24 @@ export function ContactSection() {
             <Button
               size="lg"
               type="button"
+              data-track-name="contact_whatsapp_cta"
+              data-track-interest="trial_booking"
+              data-track-course="Free Trial Consultation / General Inquiry"
               onClick={() => openBookingModal('Free Trial Consultation / General Inquiry')}
             >
               <MessageCircle />
               WhatsApp {WHATSAPP_DISPLAY}
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <a href={PHONE_URL}>
+              <a href={PHONE_URL} data-track-name="contact_phone_call" data-track-interest="contact">
                 <Phone />
                 Call 0348-3452142
+              </a>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <a href={EMAIL_URL} data-track-name="contact_email_link" data-track-interest="contact">
+                <Mail />
+                {EMAIL_DISPLAY}
               </a>
             </Button>
           </div>
@@ -1142,6 +1593,11 @@ export function KidsAgePathsSection() {
                 key={level.name}
                 type="button"
                 onClick={() => setSelected(idx)}
+                data-track-type="tab_select"
+                data-track-name={`kids_age_path_${idx + 1}`}
+                data-track-label={`${level.name} (${level.tag})`}
+                data-track-interest="kids_program"
+                data-track-course={`Kids Spoken English — ${level.name}`}
                 initial={{ opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={VIEWPORT_ONCE}

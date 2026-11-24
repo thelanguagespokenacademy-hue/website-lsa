@@ -5,7 +5,7 @@ import { Link, usePathname } from '../lib/router';
 import { useBookingModal } from '../lib/bookingContext';
 import { Button } from './ui/Button';
 import { NavDrawer } from './ui/Modal';
-import { EMAIL_URL, ROUTE_META, WHATSAPP_DISPLAY } from '../data/siteData';
+import { EMAIL_DISPLAY, EMAIL_URL, ROUTE_META, WHATSAPP_DISPLAY } from '../data/siteData';
 import { FadeInUp } from './ui/FadeInUp';
 
 const HEADER_NAV_ITEMS = [
@@ -88,6 +88,10 @@ export function FloatingWhatsAppButton() {
     <motion.button
       type="button"
       onClick={() => openBookingModal('Free Trial Consultation / General Inquiry')}
+      data-track-name="floating_whatsapp_cta"
+      data-track-label="Floating Let's have a chat!"
+      data-track-interest="trial_booking"
+      data-track-course="Free Trial Consultation / General Inquiry"
       className="floating-wa cursor-pointer"
       aria-label="Open booking form for WhatsApp"
       initial={{ opacity: 0, y: 16 }}
@@ -136,6 +140,9 @@ export function SiteFooter() {
             <Link to="/stories">Student voices</Link>
             <Link to="/certificates">Certificates</Link>
             <Link to="/contact">Free Demo</Link>
+            <Link to="/analytics" data-track-name="footer_analytics_link">
+              Interest Analytics
+            </Link>
           </div>
 
           <div>
@@ -144,12 +151,15 @@ export function SiteFooter() {
             <button
               type="button"
               onClick={() => openBookingModal('Free Trial Consultation / General Inquiry')}
+              data-track-name="footer_whatsapp_cta"
+              data-track-interest="trial_booking"
+              data-track-course="Free Trial Consultation / General Inquiry"
               className="mt-3 block text-left text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors"
             >
               WhatsApp {WHATSAPP_DISPLAY} ↗
             </button>
-            <a href={EMAIL_URL}>
-              Email us <ArrowUpRight className="inline" size={13} />
+            <a href={EMAIL_URL} data-track-name="footer_email_link" data-track-interest="contact">
+              {EMAIL_DISPLAY} <ArrowUpRight className="inline" size={13} />
             </a>
           </div>
         </div>
