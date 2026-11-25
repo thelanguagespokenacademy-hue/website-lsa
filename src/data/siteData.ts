@@ -28,7 +28,7 @@ export const ASSETS = {
   kidsPoster2: asset('images/no-fees-english-speaking-poster-fee-3500.png'),
   womenPoster1: asset('images/no-fees-female-speaking-course-reference-style-v4.jpeg'),
   womenPoster2: asset('images/no-fees-female-speaking-course-navy-gold.png'),
-  kidsWelcomePoster: asset('assets/aistudio/WhatsApp_Image_2026-11-13_at_9.51.22_AM_e217f483.jpeg'),
+  kidsWelcomePoster: asset('assets/aistudio/image_de2d3ae1.png'),
   studentDifferenceVideoId: 'tQhGDwCGTOw',
   studentDifferenceYoutubeUrl: 'https://youtube.com/shorts/tQhGDwCGTOw?si=l7IbqYK09WNFZEFP',
   studentDifferenceEmbedUrl:

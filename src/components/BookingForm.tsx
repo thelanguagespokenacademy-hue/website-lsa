@@ -47,8 +47,9 @@ interface FormErrors {
 
 const EDUCATION_OPTIONS = [
   'Pre-School / KG',
-  'Primary (Grade 1–5)',
-  'Middle (Grade 6–8)',
+  'Grade 1 to 3',
+  'Grade 4 to 5',
+  'Grade 6 to 8',
   'Matric / O-Levels',
   'Intermediate / Graduate',
   'Teacher / Working Woman',

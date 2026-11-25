@@ -168,7 +168,21 @@ export function HeroSlider() {
 
       <div className="shell hero-shell">
         <div className="hero-top-bar">
-          <span className="live-label">LIVE · ONLINE · SPEAKING FIRST</span>
+          <span className="live-label">
+            <span>Live Online</span>
+            <span aria-hidden="true" className="text-primary">
+              ·
+            </span>
+            <span>Mon–Fri</span>
+            <span aria-hidden="true" className="text-primary">
+              ·
+            </span>
+            <span className="tabular-nums">6 Learners / Batch</span>
+            <span aria-hidden="true" className="text-primary">
+              ·
+            </span>
+            <span>Urdu &amp; English</span>
+          </span>
         </div>
 
         <div className="hero-inner">
@@ -205,6 +219,36 @@ export function HeroSlider() {
                     View programs
                   </Link>
                 </Button>
+              </div>
+
+              <div className="mt-7 pt-5 border-t border-white/15 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-zinc-300">
+                <Link
+                  to="/kids-program"
+                  data-track-name="hero_quick_kids"
+                  data-track-interest="kids_program"
+                  className="hover:text-primary transition-colors whitespace-nowrap"
+                >
+                  <span className="text-primary tabular-nums mr-1.5">01.</span>
+                  Kids (4–14) · Rs. 133/Day
+                </Link>
+                <Link
+                  to="/english"
+                  data-track-name="hero_quick_women"
+                  data-track-interest="womens_program"
+                  className="hover:text-primary transition-colors whitespace-nowrap"
+                >
+                  <span className="text-primary tabular-nums mr-1.5">02.</span>
+                  Women’s Fluency
+                </Link>
+                <Link
+                  to="/teachers"
+                  data-track-name="hero_quick_teachers"
+                  data-track-interest="teacher_track"
+                  className="hover:text-primary transition-colors whitespace-nowrap"
+                >
+                  <span className="text-primary tabular-nums mr-1.5">03.</span>
+                  Teacher Track
+                </Link>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -769,7 +813,9 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
               Our spoken English programs for growing voices and everyday confidence.
             </p>
           </div>
-          <span className="tag">1 day free trial class</span>
+          <p className="text-xs font-semibold text-primary whitespace-nowrap shrink-0">
+            1-Day Free Trial Class · Live Small Batches
+          </p>
         </FadeInUp>
 
         <div className="course-grid">
@@ -883,6 +929,30 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
 }
 
 export function SpokenSkillsSection() {
+  const [selectedTierIdx, setSelectedTierIdx] = useState(0);
+
+  const kidsTiers = [
+    {
+      label: 'Ages 4–6',
+      fee: 'Rs. 133/Day',
+      course: 'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
+      summary: 'Playful phonics, everyday words, greetings, and early speaking confidence.',
+    },
+    {
+      label: 'Ages 7–9',
+      fee: 'Rs. 145/Day',
+      course: 'Kids Spoken English Program (Ages 7–9 · Rs. 145/Day)',
+      summary: 'Full-sentence speaking, storytelling games, and natural classroom interaction.',
+    },
+    {
+      label: 'Ages 10–14',
+      fee: 'Rs. 155/Day',
+      course: 'Kids Spoken English Program (Ages 10–14 · Rs. 155/Day)',
+      summary: 'Pronunciation clarity, group discussions, presentations, and fluent conversation.',
+    },
+  ];
+  const activeTier = kidsTiers[selectedTierIdx] ?? kidsTiers[0];
+
   const speakingTracks = [
     {
       name: 'Kids Spoken English',
@@ -975,13 +1045,40 @@ export function SpokenSkillsSection() {
             </h2>
             <p className="section-intro">
               Fun learning and live 1-hour Google Meet video sessions Monday to Friday, with only
-              7–8 students per session for personal speaking practice.
+              6–8 students per session for personal speaking practice.
             </p>
-            <p className="section-intro mt-4 tabular-nums">
-              Ages 4–6: Rs. 133/Day · Ages 7–9: Rs. 145/Day · Ages 10–14: Rs. 155/Day
+
+            <div className="mt-5 p-1 rounded-xl bg-black/60 border border-white/10 inline-flex flex-wrap gap-1">
+              {kidsTiers.map((tier, idx) => {
+                const active = idx === selectedTierIdx;
+                return (
+                  <button
+                    key={tier.label}
+                    type="button"
+                    onClick={() => setSelectedTierIdx(idx)}
+                    data-track-type="tab_select"
+                    data-track-name={`banner_kids_tier_${idx + 1}`}
+                    data-track-label={`Kids Tier ${tier.label} (${tier.fee})`}
+                    data-track-interest="kids_program"
+                    data-track-course={tier.course}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-semibold tabular-nums transition-colors cursor-pointer whitespace-nowrap ${
+                      active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {tier.label} · {tier.fee}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-xs sm:text-sm text-zinc-300 mt-3 leading-relaxed">
+              {activeTier.summary}
             </p>
+
             <div className="mt-6">
-              <EnrollButton course="Kids Spoken English Program (Ages 4–14)" label="Register Now" />
+              <EnrollButton course={activeTier.course} label="Register Now" />
             </div>
           </div>
 
@@ -1002,6 +1099,8 @@ export function ClassworkExercisesSection({
 }: {
   tone?: 'coral' | 'muted' | 'default';
 } = {}) {
+  const [spotlightIdx, setSpotlightIdx] = useState<number | null>(null);
+
   const originParam =
     typeof window !== 'undefined'
       ? `&origin=${encodeURIComponent(window.location.origin)}`
@@ -1014,6 +1113,8 @@ export function ClassworkExercisesSection({
       : tone === 'muted'
         ? 'section section-muted'
         : 'section';
+
+  const spotlightClip = spotlightIdx !== null ? CLASSWORK_VIDEOS[spotlightIdx] : null;
 
   return (
     <FadeInUp as="section" className={sectionClass} id="classwork">
@@ -1062,65 +1163,177 @@ export function ClassworkExercisesSection({
                 Watch real classwork &amp; speaking exercise clips
               </h3>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Tap any clip below to see how students participate in daily spoken English
-                exercises, dialogues, and interactive classroom tasks.
+                Tap any clip to play it directly, or open Spotlight View for a larger theater
+                playback.
               </p>
             </div>
 
-            <EnrollButton
-              course="Free Trial Consultation / General Inquiry"
-              label="Try 1 Free Class"
-            />
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              {spotlightClip ? (
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setSpotlightIdx(null)}
+                  data-track-name="classwork_close_spotlight"
+                >
+                  <X />
+                  Close Spotlight
+                </Button>
+              ) : null}
+              <EnrollButton
+                course="Free Trial Consultation / General Inquiry"
+                label="Try 1 Free Class"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {CLASSWORK_VIDEOS.map((clip, idx) => (
+          <AnimatePresence initial={false}>
+            {spotlightClip && spotlightIdx !== null && (
               <motion.div
-                key={clip.id}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={VIEWPORT_ONCE}
-                transition={{ duration: 0.4, delay: idx * 0.06, ease: EASE_OUT_EXPO }}
-                className="flex flex-col rounded-xl border border-white/10 bg-black/75 overflow-hidden"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: EASE_OUT_EXPO }}
+                className="mb-7 rounded-2xl border border-primary/30 bg-black/80 p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-[minmax(0,320px)_1fr] gap-6 items-center"
               >
-                <div className="relative w-full aspect-[9/16] bg-black border-b border-white/10">
+                <div className="mx-auto w-full max-w-[300px] rounded-xl overflow-hidden border border-primary/25 bg-black shadow-[0_20px_50px_rgba(0,0,0,0.7)]">
                   <iframe
-                    src={`${clip.embedUrl}${originParam}`}
-                    title={`${clip.badge}: ${clip.title}`}
+                    key={`spotlight-${spotlightClip.id}`}
+                    src={`${spotlightClip.embedUrl}&autoplay=1${originParam}`}
+                    title={`Spotlight: ${spotlightClip.title}`}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen
-                    loading="lazy"
-                    className="w-full h-full border-0 block"
+                    className="w-full aspect-[9/16] max-h-[500px] border-0 block"
                   />
                 </div>
 
-                <div className="p-3.5 flex flex-col flex-1 justify-between gap-2.5">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                      {clip.badge}
-                    </span>
-                    <h4 className="text-sm font-bold text-foreground leading-snug">
-                      {clip.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{clip.focus}</p>
+                <div className="space-y-4">
+                  <span className="eyebrow !mb-0">
+                    {spotlightClip.badge} · Spotlight Player
+                  </span>
+                  <h4 className="text-xl sm:text-2xl font-bold text-foreground">
+                    {spotlightClip.title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+                    {spotlightClip.focus}. Join our live Monday–Friday classrooms to practice
+                    exercises like this with personal feedback.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setSpotlightIdx(
+                          (spotlightIdx + CLASSWORK_VIDEOS.length - 1) % CLASSWORK_VIDEOS.length
+                        )
+                      }
+                      data-track-name="classwork_spotlight_prev"
+                    >
+                      <ChevronLeft />
+                      Previous Clip
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setSpotlightIdx((spotlightIdx + 1) % CLASSWORK_VIDEOS.length)
+                      }
+                      data-track-name="classwork_spotlight_next"
+                    >
+                      Next Clip
+                      <ChevronRight />
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <a
+                        href={spotlightClip.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-track-name="classwork_spotlight_youtube"
+                        data-track-interest="stories"
+                      >
+                        <ExternalLink />
+                        Watch on YouTube
+                      </a>
+                    </Button>
                   </div>
-
-                  <a
-                    href={clip.youtubeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-track-name={`classwork_video_youtube_${idx + 1}`}
-                    data-track-label={`Classwork YouTube: ${clip.badge} — ${clip.title}`}
-                    data-track-interest="stories"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline pt-1"
-                  >
-                    <ExternalLink size={12} />
-                    Watch on YouTube
-                  </a>
                 </div>
               </motion.div>
-            ))}
+            )}
+          </AnimatePresence>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {CLASSWORK_VIDEOS.map((clip, idx) => {
+              const isSpotlight = spotlightIdx === idx;
+              return (
+                <motion.div
+                  key={clip.id}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={VIEWPORT_ONCE}
+                  transition={{ duration: 0.4, delay: idx * 0.06, ease: EASE_OUT_EXPO }}
+                  className={`flex flex-col rounded-xl border bg-black/75 overflow-hidden transition-colors ${
+                    isSpotlight
+                      ? 'border-primary shadow-[0_12px_36px_rgba(188,239,18,0.16)]'
+                      : 'border-white/10 hover:border-primary/40'
+                  }`}
+                >
+                  <div className="relative w-full aspect-[9/16] bg-black border-b border-white/10">
+                    <iframe
+                      src={`${clip.embedUrl}${originParam}`}
+                      title={`${clip.badge}: ${clip.title}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                      loading="lazy"
+                      className="w-full h-full border-0 block"
+                    />
+                  </div>
+
+                  <div className="p-3.5 flex flex-col flex-1 justify-between gap-2.5">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold tracking-wider text-primary tabular-nums">
+                        {String(idx + 1).padStart(2, '0')} · {clip.badge}
+                      </span>
+                      <h4 className="text-sm font-bold text-foreground leading-snug">
+                        {clip.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{clip.focus}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setSpotlightIdx(isSpotlight ? null : idx)}
+                        data-track-name={`classwork_spotlight_open_${idx + 1}`}
+                        data-track-label={`Spotlight: ${clip.title}`}
+                        data-track-interest="stories"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+                      >
+                        <Play size={11} className="text-primary" />
+                        {isSpotlight ? 'In Spotlight' : 'Spotlight'}
+                      </button>
+
+                      <a
+                        href={clip.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-track-name={`classwork_video_youtube_${idx + 1}`}
+                        data-track-label={`Classwork YouTube: ${clip.badge} — ${clip.title}`}
+                        data-track-interest="stories"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        <ExternalLink size={11} />
+                        YouTube
+                      </a>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1332,7 +1545,7 @@ export function CertificatesSection() {
   );
 }
 
-export function StoriesSection() {
+export function StoriesSection({ tone = 'default' }: { tone?: 'default' | 'muted' } = {}) {
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
 
   const stories = [
@@ -1366,7 +1579,11 @@ export function StoriesSection() {
       : null;
 
   return (
-    <FadeInUp as="section" className="section" id="voices">
+    <FadeInUp
+      as="section"
+      className={tone === 'muted' ? 'section section-muted' : 'section'}
+      id="voices"
+    >
       <div className="shell">
         <FadeInUp y={16}>
           <span className="eyebrow">Real student voices</span>
@@ -1500,6 +1717,24 @@ export function TeachersSection() {
 export function ContactSection() {
   const { openBookingModal } = useBookingModal();
 
+  const quickCourses = [
+    {
+      label: 'Kids Program (4–14)',
+      course: 'Kids English Speaking Course (Ages 4–14)',
+      interest: 'kids_program',
+    },
+    {
+      label: 'Women’s Fluency',
+      course: 'Female English Speaking Course',
+      interest: 'womens_program',
+    },
+    {
+      label: 'Teacher Communication',
+      course: 'Teacher Communication Track',
+      interest: 'teacher_track',
+    },
+  ];
+
   return (
     <FadeInUp as="section" className="section contact" id="contact">
       <div className="shell">
@@ -1510,6 +1745,23 @@ export function ContactSection() {
             Limited seats. Fill out your quick student details to message us on WhatsApp or call
             to book your free trial class without pressure.
           </p>
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            {quickCourses.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => openBookingModal(item.course)}
+                data-track-name={`contact_quick_${item.interest}`}
+                data-track-label={`Quick Trial: ${item.label}`}
+                data-track-interest={item.interest}
+                data-track-course={item.course}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-white/15 bg-black/50 text-zinc-200 hover:border-primary/60 hover:text-primary transition-colors cursor-pointer whitespace-nowrap"
+              >
+                {item.label} →
+              </button>
+            ))}
+          </div>
 
           <div className="contact-actions">
             <Button

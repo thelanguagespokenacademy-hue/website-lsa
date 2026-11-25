@@ -36,8 +36,6 @@ function HomePage() {
     <main>
       <HeroSlider />
       <BenefitsBar />
-      <WhySection />
-      <ClassworkExercisesSection tone="muted" />
       <ShowcaseMarquee />
       <WhoAreYouSection />
       <div id="programs">
@@ -45,10 +43,12 @@ function HomePage() {
         <SpokenSkillsSection />
       </div>
       <JourneySection />
-      <CertificatesSection />
-      <StoriesSection />
+      <StoriesSection tone="muted" />
       <GlobalClassroomSection />
       <TeachersSection />
+      <WhySection />
+      <ClassworkExercisesSection tone="default" />
+      <CertificatesSection />
       <ContactSection />
     </main>
   );
@@ -163,6 +163,8 @@ function TeachersPage() {
     <main>
       <PageTitle title="Our teachers" eyebrow="Meet your guides" />
       <TeachersSection />
+      <WhySection />
+      <ClassworkExercisesSection tone="muted" />
       <ContactSection />
     </main>
   );
