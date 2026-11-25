@@ -1,21 +1,54 @@
 {
   "entities": {
-    "AnalyticsEvent": {
-      "title": "AnalyticsEvent",
-      "description": "Immutable user interaction event capturing screen views and button clicks without PII to measure course and program interest.",
+    "VisitorProfile": {
+      "title": "VisitorProfile",
+      "description": "Persistent cross-visit visitor record keyed by visitorId and validated by visitorToken, summarizing returning visits, explored options, and recent activity without PII.",
       "type": "object",
       "properties": {
-        "sessionId": {
+        "visitorId": {
           "type": "string",
           "minLength": 8,
           "maxLength": 64,
           "pattern": "^[a-zA-Z0-9_-]+$",
-          "description": "Anonymous browser session identifier."
+          "description": "Persistent browser visitor identifier matching the document ID."
         },
-        "eventType": {
+        "visitorToken": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Persistent visitor ownership token preventing third-party tampering."
+        },
+        "currentSessionId": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Most recent browser tab session identifier."
+        },
+        "visitCount": {
+          "type": "integer",
+          "description": "Total number of distinct browser sessions recorded for this visitor."
+        },
+        "totalEvents": {
+          "type": "integer",
+          "description": "Total number of tracked views and interactions recorded for this visitor."
+        },
+        "isReturning": {
+          "type": "boolean",
+          "description": "True once the visitor returns on a subsequent session."
+        },
+        "lastScreen": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Latest route path visited."
+        },
+        "lastEventType": {
           "type": "string",
           "enum": [
             "screen_view",
+            "option_view",
             "button_click",
             "modal_open",
             "modal_close",
@@ -25,7 +58,135 @@
             "outbound_click"
           ],
           "maxLength": 32,
-          "description": "Category of interaction event."
+          "description": "Category of the latest interaction or impression."
+        },
+        "lastEventName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100,
+          "pattern": "^[a-zA-Z0-9_.:-]+$",
+          "description": "Canonical machine-readable identifier of the latest event."
+        },
+        "lastLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "description": "Human-readable label of the latest option or action."
+        },
+        "lastInterestCategory": {
+          "type": "string",
+          "enum": [
+            "kids_program",
+            "womens_program",
+            "teacher_track",
+            "trial_booking",
+            "certificates",
+            "stories",
+            "general_info",
+            "contact"
+          ],
+          "maxLength": 32,
+          "description": "Latest inferred interest segment for the visitor."
+        },
+        "lastCourse": {
+          "type": "string",
+          "maxLength": 140,
+          "description": "Optional latest program or age-tier associated with this visitor."
+        },
+        "exploredOptions": {
+          "type": "array",
+          "description": "Bounded summary list (max 25) of unique options, cards, and sections loaded or clicked by this visitor."
+        },
+        "visitedScreens": {
+          "type": "array",
+          "description": "Bounded summary list (max 20) of routes visited by this visitor."
+        },
+        "deviceType": {
+          "type": "string",
+          "enum": ["desktop", "mobile", "tablet"],
+          "maxLength": 16,
+          "description": "Viewport device class."
+        },
+        "deviceSummary": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Readable non-PII device platform, screen, and GPU hint."
+        },
+        "firstSeenAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Immutable server timestamp of the visitor's initial arrival."
+        },
+        "lastSeenAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the visitor's most recent activity."
+        }
+      },
+      "required": [
+        "visitorId",
+        "visitorToken",
+        "currentSessionId",
+        "visitCount",
+        "totalEvents",
+        "isReturning",
+        "lastScreen",
+        "lastEventType",
+        "lastEventName",
+        "lastLabel",
+        "lastInterestCategory",
+        "exploredOptions",
+        "visitedScreens",
+        "deviceType",
+        "firstSeenAt",
+        "lastSeenAt"
+      ]
+    },
+    "VisitorEvent": {
+      "title": "VisitorEvent",
+      "description": "Immutable event stored inside /visitors/{visitorId}/events/{eventId} capturing every route, loaded Home option, and click without PII.",
+      "type": "object",
+      "properties": {
+        "visitorId": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Parent persistent visitor identifier."
+        },
+        "visitorToken": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Visitor ownership token matching the parent visitor document."
+        },
+        "sessionId": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Browser session identifier."
+        },
+        "visitNumber": {
+          "type": "integer",
+          "description": "1-based visit number when this event occurred."
+        },
+        "eventType": {
+          "type": "string",
+          "enum": [
+            "screen_view",
+            "option_view",
+            "button_click",
+            "modal_open",
+            "modal_close",
+            "tab_select",
+            "slide_change",
+            "form_submit",
+            "outbound_click"
+          ],
+          "maxLength": 32,
+          "description": "Category of interaction or option impression."
         },
         "eventName": {
           "type": "string",
@@ -38,13 +199,23 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 80,
-          "description": "Active application route path."
+          "description": "Active route path."
+        },
+        "section": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Optional page section identifier."
+        },
+        "optionKey": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Optional identifier of the card, tier, video, or option loaded/clicked."
         },
         "label": {
           "type": "string",
           "minLength": 1,
           "maxLength": 140,
-          "description": "Human-readable button, link, or screen label."
+          "description": "Human-readable option, screen, or CTA label."
         },
         "interestCategory": {
           "type": "string",
@@ -59,26 +230,29 @@
             "contact"
           ],
           "maxLength": 32,
-          "description": "Inferred visitor interest segment."
+          "description": "Inferred interest category."
         },
         "course": {
           "type": "string",
           "maxLength": 140,
-          "description": "Optional program or age-group tier associated with the action."
+          "description": "Optional program or tier associated with the event."
         },
         "metadata": {
           "type": "string",
           "maxLength": 200,
-          "description": "Optional non-PII interaction context."
+          "description": "Optional non-PII context."
         },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Server timestamp when the event was recorded."
+          "description": "Server timestamp when the event occurred."
         }
       },
       "required": [
+        "visitorId",
+        "visitorToken",
         "sessionId",
+        "visitNumber",
         "eventType",
         "eventName",
         "screen",
@@ -86,14 +260,64 @@
         "interestCategory",
         "createdAt"
       ]
+    },
+    "AnalyticsEvent": {
+      "title": "AnalyticsEvent",
+      "description": "Legacy flat analytics event collection (admin read/delete only).",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_-]+$"
+        },
+        "eventType": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "eventName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "screen": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "interestCategory": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["sessionId", "eventType", "eventName", "screen", "label", "interestCategory", "createdAt"]
     }
   },
   "firestore": {
+    "/visitors/{visitorId}": {
+      "schema": {
+        "$ref": "#/entities/VisitorProfile"
+      },
+      "description": "Persistent returning-visitor profile documents. Created/updated with matching visitorToken proof and bounded arrays; readable/deletable only by verified admin."
+    },
+    "/visitors/{visitorId}/events/{eventId}": {
+      "schema": {
+        "$ref": "#/entities/VisitorEvent"
+      },
+      "description": "Append-only behavioral events nested under each visitor's ID so all actions across visits accumulate under the same user record. Requires matching parent visitorToken; readable/deletable only by verified admin."
+    },
     "/events/{eventId}": {
       "schema": {
         "$ref": "#/entities/AnalyticsEvent"
       },
-      "description": "Append-only stream of screen view and button click analytics events. Publicly writable with strict schema validation; readable only by verified admin."
+      "description": "Legacy analytics events archive. Admin-only read/delete."
     }
   }
 }

@@ -134,6 +134,10 @@ export function HeroSlider() {
     <section
       className={`hero ${paused ? 'hero-paused' : ''}`}
       id="home"
+      data-track-view="home_hero_banner"
+      data-track-label={`Hero Banner: ${slide.title}`}
+      data-track-section="home"
+      data-track-interest="general_info"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={(e) => {
@@ -318,7 +322,15 @@ export function BenefitsBar() {
   ];
 
   return (
-    <FadeInUp className="benefits" y={16} duration={0.45}>
+    <FadeInUp
+      className="benefits"
+      y={16}
+      duration={0.45}
+      data-track-view="benefits_bar"
+      data-track-label="Key Benefits Strip (100% Online · 6 Students/Batch · Urdu & English)"
+      data-track-section="benefits"
+      data-track-interest="general_info"
+    >
       {items.map(({ Icon, text }) => (
         <span key={text}>
           <Icon />
@@ -387,7 +399,15 @@ export function ShowcaseMarquee() {
       : null;
 
   return (
-    <FadeInUp className="marquee-band" aria-label="Program visual highlights" y={20}>
+    <FadeInUp
+      className="marquee-band"
+      aria-label="Program visual highlights"
+      y={20}
+      data-track-view="program_visual_highlights"
+      data-track-label="Visual Highlights Marquee Loaded"
+      data-track-section="showcase"
+      data-track-interest="general_info"
+    >
       <div className="marquee-mask">
         <div className="marquee-track">
           {[...tiles, ...tiles].map((tile, idx) => (
@@ -454,7 +474,7 @@ export function WhoAreYouSection() {
   ];
 
   return (
-    <FadeInUp as="section" className="section">
+    <FadeInUp as="section" className="section" id="audience">
       <div className="shell">
         <FadeInUp y={16}>
           <span className="eyebrow">Start where you are</span>
@@ -475,6 +495,16 @@ export function WhoAreYouSection() {
               transition={{ duration: 0.45, delay: i * 0.08, ease: EASE_OUT_EXPO }}
               whileHover={{ y: -4 }}
               className="path"
+              data-track-view={`audience_option_${index}`}
+              data-track-label={`Option Loaded: ${title} (${cta})`}
+              data-track-section="audience"
+              data-track-interest={
+                to === '/kids-program'
+                  ? 'kids_program'
+                  : to === '/english'
+                    ? 'womens_program'
+                    : 'teacher_track'
+              }
             >
               <div className="path-top">
                 <div className="path-icon-box">
@@ -613,7 +643,13 @@ export function WhySection() {
         </div>
 
         {/* Real student proof video shown & auto-playing by default with user toggle */}
-        <div className="mt-8 rounded-2xl border border-white/10 bg-[#110f0f]/90 p-5 sm:p-7">
+        <div
+          className="mt-8 rounded-2xl border border-white/10 bg-[#110f0f]/90 p-5 sm:p-7"
+          data-track-view="our_difference_student_video"
+          data-track-label="Our Difference: Real Student Proof Video Loaded"
+          data-track-section="why"
+          data-track-interest="stories"
+        >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1 max-w-xl">
               <span className="eyebrow !mb-1">Real Student Proof</span>
@@ -830,6 +866,11 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
                 transition={{ duration: 0.5, delay: idx * 0.1, ease: EASE_OUT_EXPO }}
                 whileHover={{ y: -5 }}
                 className="course-card"
+                data-track-view={`program_card_${course.name.startsWith('Kids') ? 'kids' : 'women'}`}
+                data-track-label={`Program Loaded: ${course.name} (${course.age})`}
+                data-track-section="english"
+                data-track-interest={course.name.startsWith('Kids') ? 'kids_program' : 'womens_program'}
+                data-track-course={course.name}
               >
                 <div className="media-frame">
                   <img
@@ -996,6 +1037,17 @@ export function SpokenSkillsSection() {
               transition={{ duration: 0.45, delay: idx * 0.08, ease: EASE_OUT_EXPO }}
               whileHover={{ y: -5 }}
               className="track-card"
+              data-track-view={`track_option_${idx + 1}`}
+              data-track-label={`Track Loaded: ${course.name} (${course.duration})`}
+              data-track-section="skills"
+              data-track-interest={
+                course.name.includes('Kids')
+                  ? 'kids_program'
+                  : course.name.includes('Women')
+                    ? 'womens_program'
+                    : 'teacher_track'
+              }
+              data-track-course={course.name}
             >
               <div className="media-frame">
                 <img
@@ -1035,7 +1087,15 @@ export function SpokenSkillsSection() {
           ))}
         </div>
 
-        <FadeInUp className="build-banner" y={20}>
+        <FadeInUp
+          className="build-banner"
+          y={20}
+          data-track-view="kids_age_tiers_banner"
+          data-track-label="Kids Ages 4–14 Program & Poster Loaded"
+          data-track-section="skills"
+          data-track-interest="kids_program"
+          data-track-course="Kids English Speaking Course (Ages 4–14)"
+        >
           <div>
             <span className="eyebrow">Learn · Speak · Grow — Ages 4 to 14</span>
             <h2>
@@ -1275,6 +1335,10 @@ export function ClassworkExercisesSection({
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={VIEWPORT_ONCE}
                   transition={{ duration: 0.4, delay: idx * 0.06, ease: EASE_OUT_EXPO }}
+                  data-track-view={`classwork_video_${idx + 1}_${clip.id}`}
+                  data-track-label={`Video Loaded: ${clip.badge} — ${clip.title}`}
+                  data-track-section="classwork"
+                  data-track-interest="stories"
                   className={`flex flex-col rounded-xl border bg-black/75 overflow-hidden transition-colors ${
                     isSpotlight
                       ? 'border-primary shadow-[0_12px_36px_rgba(188,239,18,0.16)]'
@@ -1354,7 +1418,15 @@ export function JourneySection() {
   ];
 
   return (
-    <FadeInUp as="section" className="section" id="journey">
+    <FadeInUp
+      as="section"
+      className="section"
+      id="journey"
+      data-track-view="journey_6_steps"
+      data-track-label="6 Simple Steps Journey Loaded"
+      data-track-section="journey"
+      data-track-interest="general_info"
+    >
       <div className="shell">
         <FadeInUp y={16}>
           <span className="eyebrow">Your Learning Journey</span>
@@ -1419,7 +1491,15 @@ export function CertificatesSection() {
   };
 
   return (
-    <FadeInUp as="section" className="section section-muted" id="certificates">
+    <FadeInUp
+      as="section"
+      className="section section-muted"
+      id="certificates"
+      data-track-view="student_certificates_section"
+      data-track-label="Our Proud Students Certificates Loaded"
+      data-track-section="certificates"
+      data-track-interest="certificates"
+    >
       <div className="shell">
         <FadeInUp y={16}>
           <span className="eyebrow">Verified Student Achievements</span>
@@ -1583,6 +1663,10 @@ export function StoriesSection({ tone = 'default' }: { tone?: 'default' | 'muted
       as="section"
       className={tone === 'muted' ? 'section section-muted' : 'section'}
       id="voices"
+      data-track-view="student_voices_stories"
+      data-track-label="Student Voices & Stories Loaded"
+      data-track-section="voices"
+      data-track-interest="stories"
     >
       <div className="shell">
         <FadeInUp y={16}>
@@ -1646,7 +1730,15 @@ export function GlobalClassroomSection() {
   const regions = ['Pakistan', 'UAE', 'Saudi Arabia', 'United Kingdom', 'More soon'];
 
   return (
-    <FadeInUp as="section" className="section section-coral">
+    <FadeInUp
+      as="section"
+      className="section section-coral"
+      id="global-classroom"
+      data-track-view="global_classroom_section"
+      data-track-label="Global Classroom Countries Loaded"
+      data-track-section="global-classroom"
+      data-track-interest="general_info"
+    >
       <div className="shell split">
         <FadeInUp y={18}>
           <span className="eyebrow">Our global classroom</span>
@@ -1678,7 +1770,15 @@ export function GlobalClassroomSection() {
 
 export function TeachersSection() {
   return (
-    <FadeInUp as="section" className="section" id="teachers">
+    <FadeInUp
+      as="section"
+      className="section"
+      id="teachers"
+      data-track-view="meet_our_teachers_section"
+      data-track-label="Meet Your Guides / Teachers Section Loaded"
+      data-track-section="teachers"
+      data-track-interest="teacher_track"
+    >
       <div className="shell split">
         <FadeInUp y={18}>
           <img
@@ -1736,7 +1836,15 @@ export function ContactSection() {
   ];
 
   return (
-    <FadeInUp as="section" className="section contact" id="contact">
+    <FadeInUp
+      as="section"
+      className="section contact"
+      id="contact"
+      data-track-view="contact_journey_cta"
+      data-track-label="Your Journey Starts Here CTA Loaded"
+      data-track-section="contact"
+      data-track-interest="trial_booking"
+    >
       <div className="shell">
         <div className="contact-panel">
           <span className="eyebrow">Your first conversation starts here</span>
@@ -1847,7 +1955,9 @@ export function KidsAgePathsSection() {
                 onClick={() => setSelected(idx)}
                 data-track-type="tab_select"
                 data-track-name={`kids_age_path_${idx + 1}`}
+                data-track-view={`kids_age_level_${idx + 1}`}
                 data-track-label={`${level.name} (${level.tag})`}
+                data-track-section="kids-age-paths"
                 data-track-interest="kids_program"
                 data-track-course={`Kids Spoken English — ${level.name}`}
                 initial={{ opacity: 0, y: 18 }}

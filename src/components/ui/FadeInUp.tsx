@@ -12,6 +12,7 @@ interface FadeInUpProps {
   duration?: number;
   as?: 'div' | 'section' | 'footer';
   'aria-label'?: string;
+  [key: `data-${string}`]: string | undefined;
 }
 
 export function FadeInUp({
@@ -23,6 +24,7 @@ export function FadeInUp({
   duration = 0.55,
   as = 'div',
   'aria-label': ariaLabel,
+  ...dataProps
 }: FadeInUpProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const isInView = useInView(ref, {
@@ -32,6 +34,7 @@ export function FadeInUp({
   });
 
   const sharedProps = {
+    ...dataProps,
     id,
     'aria-label': ariaLabel,
     className,

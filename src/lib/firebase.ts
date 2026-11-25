@@ -1,11 +1,20 @@
 import { initializeApp } from 'firebase/app';
 import {
+  GoogleAuthProvider,
+  getAuth,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth';
+import {
   type Analytics,
   getAnalytics,
   isSupported,
   logEvent as firebaseLogEvent,
   setUserProperties,
 } from 'firebase/analytics';
+import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const GA4_ID_PATTERN = /^G-[A-Z0-9]{6,16}$/i;
@@ -40,8 +49,101 @@ const app = initializeApp({
   ...(effectiveMeasurementId ? { measurementId: effectiveMeasurementId } : {}),
 });
 
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const auth = getAuth(app);
+
 export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
 export const FIREBASE_APP_ID = firebaseConfig.appId;
+export const FIRESTORE_DATABASE_ID = firebaseConfig.firestoreDatabaseId;
+export const ADMIN_EMAIL = 'sultanawaischeema@gmail.com';
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function buildFirestoreErrorInfo(
+  error: unknown,
+  operationType: OperationType,
+  path: string | null
+): FirestoreErrorInfo {
+  return {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo:
+        auth.currentUser?.providerData?.map((provider) => ({
+          providerId: provider.providerId,
+          email: provider.email,
+        })) || [],
+    },
+    operationType,
+    path,
+  };
+}
+
+export function handleFirestoreError(
+  error: unknown,
+  operationType: OperationType,
+  path: string | null
+): never {
+  const errInfo = buildFirestoreErrorInfo(error, operationType, path);
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+async function testConnection(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error('Please check your Firebase configuration.');
+    }
+  }
+}
+
+void testConnection();
+
+export function subscribeAuth(callback: (user: User | null) => void): () => void {
+  return onAuthStateChanged(auth, callback);
+}
+
+export async function signInWithGooglePopup(): Promise<User> {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const result = await signInWithPopup(auth, provider);
+  return result.user;
+}
+
+export async function signOutUser(): Promise<void> {
+  await signOut(auth);
+}
 
 let analyticsPromise: Promise<Analytics | null> | null = null;
 let analyticsReadyState: 'pending' | 'ready' | 'missing_measurement_id' | 'unsupported' = 'pending';
@@ -77,8 +179,6 @@ export function initFirebaseAnalytics(): Promise<Analytics | null> {
         return null;
       }
 
-      // If no local G- measurementId is set, check the Firebase app webConfig first
-      // so we avoid initializing gtag with ?id=undefined when GA is not yet linked.
       let serverMeasurementId = effectiveMeasurementId;
       if (!serverMeasurementId) {
         try {
@@ -116,13 +216,13 @@ export function initFirebaseAnalytics(): Promise<Analytics | null> {
   return analyticsPromise;
 }
 
-// Initialize eagerly in browser environments
 void initFirebaseAnalytics();
 
 export function getFirebaseAnalyticsStatus(): {
   state: 'pending' | 'ready' | 'missing_measurement_id' | 'unsupported';
   projectId: string;
   appId: string;
+  databaseId: string;
   measurementId: string;
   invalidMeasurementId: string;
 } {
@@ -131,6 +231,7 @@ export function getFirebaseAnalyticsStatus(): {
     state: analyticsReadyState,
     projectId: FIREBASE_PROJECT_ID,
     appId: FIREBASE_APP_ID,
+    databaseId: FIRESTORE_DATABASE_ID,
     measurementId: detected,
     invalidMeasurementId: invalidProvidedMeasurementId,
   };

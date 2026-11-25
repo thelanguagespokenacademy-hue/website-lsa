@@ -1,9 +1,278 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Firestore database is disabled; analytics uses Firebase Analytics (logEvent) instead.
+    // Global default-deny safety net
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // Core primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 8 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email == 'sultanawaischeema@gmail.com';
+    }
+
+    function isValidEventType(val) {
+      return val is string &&
+        val.size() <= 32 &&
+        val in [
+          'screen_view',
+          'option_view',
+          'button_click',
+          'modal_open',
+          'modal_close',
+          'tab_select',
+          'slide_change',
+          'form_submit',
+          'outbound_click'
+        ];
+    }
+
+    function isValidInterestCategory(val) {
+      return val is string &&
+        val.size() <= 32 &&
+        val in [
+          'kids_program',
+          'womens_program',
+          'teacher_track',
+          'trial_booking',
+          'certificates',
+          'stories',
+          'general_info',
+          'contact'
+        ];
+    }
+
+    function isValidDeviceType(val) {
+      return val is string && val.size() <= 16 && val in ['desktop', 'mobile', 'tablet'];
+    }
+
+    function isValidStringArray(arr, maxLen, maxItemLen) {
+      return arr is list &&
+        arr.size() <= maxLen &&
+        (arr.size() == 0 || (arr[0] is string && arr[0].size() >= 1 && arr[0].size() <= maxItemLen));
+    }
+
+    function isValidVisitor(data, visitorId) {
+      return data.keys().hasAll([
+          'visitorId',
+          'visitorToken',
+          'currentSessionId',
+          'visitCount',
+          'totalEvents',
+          'isReturning',
+          'lastScreen',
+          'lastEventType',
+          'lastEventName',
+          'lastLabel',
+          'lastInterestCategory',
+          'exploredOptions',
+          'visitedScreens',
+          'deviceType',
+          'firstSeenAt',
+          'lastSeenAt'
+        ]) &&
+        data.keys().hasOnly([
+          'visitorId',
+          'visitorToken',
+          'currentSessionId',
+          'visitCount',
+          'totalEvents',
+          'isReturning',
+          'lastScreen',
+          'lastEventType',
+          'lastEventName',
+          'lastLabel',
+          'lastInterestCategory',
+          'lastCourse',
+          'exploredOptions',
+          'visitedScreens',
+          'deviceType',
+          'deviceSummary',
+          'firstSeenAt',
+          'lastSeenAt'
+        ]) &&
+        data.visitorId is string &&
+        data.visitorId == visitorId &&
+        data.visitorToken is string &&
+        data.visitorToken.size() >= 16 &&
+        data.visitorToken.size() <= 64 &&
+        data.visitorToken.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.currentSessionId is string &&
+        data.currentSessionId.size() >= 8 &&
+        data.currentSessionId.size() <= 64 &&
+        data.currentSessionId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.visitCount is int &&
+        data.visitCount >= 1 &&
+        data.visitCount <= 100000 &&
+        data.totalEvents is int &&
+        data.totalEvents >= 0 &&
+        data.totalEvents <= 1000000 &&
+        data.isReturning is bool &&
+        data.lastScreen is string &&
+        data.lastScreen.size() >= 1 &&
+        data.lastScreen.size() <= 80 &&
+        isValidEventType(data.lastEventType) &&
+        data.lastEventName is string &&
+        data.lastEventName.size() >= 2 &&
+        data.lastEventName.size() <= 100 &&
+        data.lastEventName.matches('^[a-zA-Z0-9_.:-]+$') &&
+        data.lastLabel is string &&
+        data.lastLabel.size() >= 1 &&
+        data.lastLabel.size() <= 140 &&
+        isValidInterestCategory(data.lastInterestCategory) &&
+        (!('lastCourse' in data) || (data.lastCourse is string && data.lastCourse.size() <= 140)) &&
+        isValidStringArray(data.exploredOptions, 25, 100) &&
+        isValidStringArray(data.visitedScreens, 20, 80) &&
+        isValidDeviceType(data.deviceType) &&
+        (!('deviceSummary' in data) || (data.deviceSummary is string && data.deviceSummary.size() <= 120)) &&
+        data.firstSeenAt is timestamp &&
+        data.lastSeenAt is timestamp;
+    }
+
+    function isValidVisitorEvent(data, visitorId) {
+      return data.keys().hasAll([
+          'visitorId',
+          'visitorToken',
+          'sessionId',
+          'visitNumber',
+          'eventType',
+          'eventName',
+          'screen',
+          'label',
+          'interestCategory',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'visitorId',
+          'visitorToken',
+          'sessionId',
+          'visitNumber',
+          'eventType',
+          'eventName',
+          'screen',
+          'section',
+          'optionKey',
+          'label',
+          'interestCategory',
+          'course',
+          'metadata',
+          'createdAt'
+        ]) &&
+        data.visitorId is string &&
+        data.visitorId == visitorId &&
+        data.visitorToken is string &&
+        data.visitorToken.size() >= 16 &&
+        data.visitorToken.size() <= 64 &&
+        data.visitorToken.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.sessionId is string &&
+        data.sessionId.size() >= 8 &&
+        data.sessionId.size() <= 64 &&
+        data.sessionId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.visitNumber is int &&
+        data.visitNumber >= 1 &&
+        data.visitNumber <= 100000 &&
+        isValidEventType(data.eventType) &&
+        data.eventName is string &&
+        data.eventName.size() >= 2 &&
+        data.eventName.size() <= 100 &&
+        data.eventName.matches('^[a-zA-Z0-9_.:-]+$') &&
+        data.screen is string &&
+        data.screen.size() >= 1 &&
+        data.screen.size() <= 80 &&
+        (!('section' in data) || (data.section is string && data.section.size() <= 80)) &&
+        (!('optionKey' in data) || (data.optionKey is string && data.optionKey.size() <= 100)) &&
+        data.label is string &&
+        data.label.size() >= 1 &&
+        data.label.size() <= 140 &&
+        isValidInterestCategory(data.interestCategory) &&
+        (!('course' in data) || (data.course is string && data.course.size() <= 140)) &&
+        (!('metadata' in data) || (data.metadata is string && data.metadata.size() <= 200)) &&
+        data.createdAt is timestamp;
+    }
+
+    // Persistent visitor profiles keyed by persistent visitorId
+    match /visitors/{visitorId} {
+      allow get: if isValidId(visitorId) && isAdmin();
+      allow list: if isAdmin();
+      allow delete: if isValidId(visitorId) && isAdmin();
+
+      allow create: if isValidId(visitorId) &&
+        isValidVisitor(incoming(), visitorId) &&
+        incoming().visitCount == 1 &&
+        incoming().totalEvents <= 5 &&
+        incoming().firstSeenAt == request.time &&
+        incoming().lastSeenAt == request.time;
+
+      allow update: if resource != null &&
+        isValidId(visitorId) &&
+        isValidVisitor(incoming(), visitorId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'currentSessionId',
+          'visitCount',
+          'totalEvents',
+          'isReturning',
+          'lastScreen',
+          'lastEventType',
+          'lastEventName',
+          'lastLabel',
+          'lastInterestCategory',
+          'lastCourse',
+          'exploredOptions',
+          'visitedScreens',
+          'deviceType',
+          'deviceSummary',
+          'lastSeenAt'
+        ]) &&
+        incoming().visitorId == existing().visitorId &&
+        incoming().visitorToken == existing().visitorToken &&
+        incoming().firstSeenAt == existing().firstSeenAt &&
+        incoming().lastSeenAt == request.time &&
+        incoming().visitCount >= existing().visitCount &&
+        incoming().visitCount <= existing().visitCount + 1 &&
+        incoming().totalEvents >= existing().totalEvents &&
+        incoming().totalEvents <= existing().totalEvents + 25;
+
+      // Subcollection storing every route, loaded option, and click under that visitor's ID
+      match /events/{eventId} {
+        allow get: if isValidId(visitorId) && isValidId(eventId) && isAdmin();
+        allow list: if isAdmin();
+        allow update: if false;
+        allow delete: if isValidId(visitorId) && isValidId(eventId) && isAdmin();
+
+        allow create: if isValidId(visitorId) &&
+          isValidId(eventId) &&
+          isValidVisitorEvent(incoming(), visitorId) &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/visitors/$(visitorId)) &&
+          get(/databases/$(database)/documents/visitors/$(visitorId)).data.visitorToken ==
+            incoming().visitorToken;
+      }
+    }
+
+    // Legacy flat events archive (admin-only access/cleanup)
+    match /events/{eventId} {
+      allow get: if isValidId(eventId) && isAdmin();
+      allow list: if isAdmin();
+      allow create, update: if false;
+      allow delete: if isValidId(eventId) && isAdmin();
     }
   }
 }
