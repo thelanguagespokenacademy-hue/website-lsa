@@ -26,7 +26,9 @@ import {
 } from 'lucide-react';
 import { Link } from '../lib/router';
 import { useBookingModal } from '../lib/bookingContext';
+import { useRegionPricing } from '../lib/regionContext';
 import { inferInterestCategory, trackEvent } from '../lib/analytics';
+import { CountryPriceBar } from './CountryPriceBar';
 import { Button } from './ui/Button';
 import { FadeInUp } from './ui/FadeInUp';
 import { ImageDialog, type PreviewImage } from './ui/Modal';
@@ -89,6 +91,7 @@ export function EnrollButton({
 }
 
 export function HeroSlider() {
+  const { region } = useRegionPricing();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -225,15 +228,15 @@ export function HeroSlider() {
                 </Button>
               </div>
 
-              <div className="mt-7 pt-5 border-t border-white/15 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-zinc-300">
+              <div className="mt-7 pt-5 border-t border-white/15 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-zinc-300 tabular-nums">
                 <Link
                   to="/kids-program"
                   data-track-name="hero_quick_kids"
                   data-track-interest="kids_program"
                   className="hover:text-primary transition-colors whitespace-nowrap"
                 >
-                  <span className="text-primary tabular-nums mr-1.5">01.</span>
-                  Kids (4–14) · Rs. 133/Day
+                  <span className="text-primary mr-1.5">01.</span>
+                  Kids (4–14) · {region.monthlyPrice}/mo
                 </Link>
                 <Link
                   to="/english"
@@ -241,8 +244,8 @@ export function HeroSlider() {
                   data-track-interest="womens_program"
                   className="hover:text-primary transition-colors whitespace-nowrap"
                 >
-                  <span className="text-primary tabular-nums mr-1.5">02.</span>
-                  Women’s Fluency
+                  <span className="text-primary mr-1.5">02.</span>
+                  Women’s Fluency · {region.monthlyPrice}/mo
                 </Link>
                 <Link
                   to="/teachers"
@@ -250,8 +253,8 @@ export function HeroSlider() {
                   data-track-interest="teacher_track"
                   className="hover:text-primary transition-colors whitespace-nowrap"
                 >
-                  <span className="text-primary tabular-nums mr-1.5">03.</span>
-                  Teacher Track
+                  <span className="text-primary mr-1.5">03.</span>
+                  Teacher Track · {region.monthlyPrice}/mo
                 </Link>
               </div>
             </motion.div>
@@ -361,7 +364,7 @@ export function ShowcaseMarquee() {
       title: 'Kids Spoken Poster',
       tag: 'Mon–Fri · Live',
       url: ASSETS.kidsWelcomePoster,
-      course: 'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
+      course: 'Kids Spoken English Program (Ages 4–6)',
     },
     {
       title: 'Playful Kids Speaking',
@@ -801,6 +804,7 @@ export function WhySection() {
 }
 
 export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolean }) {
+  const { region, countryName } = useRegionPricing();
   const [posterList, setPosterList] = useState<PreviewImage[]>([]);
   const [posterIdx, setPosterIdx] = useState<number | null>(null);
 
@@ -854,6 +858,8 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
           </p>
         </FadeInUp>
 
+        <CountryPriceBar className="mb-7 rounded-2xl border border-primary/20 bg-[#110f0f]/90 px-4 py-3.5 sm:px-5" />
+
         <div className="course-grid">
           {courses
             .filter((_, idx) => !onlyKids || idx === 0)
@@ -882,8 +888,21 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
                   />
                 </div>
                 <div className="course-body">
-                  <span className="eyebrow">{course.age}</span>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="eyebrow !mb-0">{course.age}</span>
+                    <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+                      {countryName} Fee
+                    </span>
+                  </div>
                   <h3>{course.name}</h3>
+                  <div className="mb-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 rounded-xl border border-primary/20 bg-primary/[0.06] px-3.5 py-2.5">
+                    <span className="text-xl sm:text-2xl font-bold text-primary tabular-nums">
+                      {region.monthlyPrice}
+                    </span>
+                    <span className="text-xs font-medium text-zinc-300 tabular-nums">
+                      / month · 20 Live Classes ({countryName})
+                    </span>
+                  </div>
                   <p>{course.description}</p>
 
                   <ul className="course-bullets">
@@ -897,7 +916,9 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
 
                   <div className="course-bottom">
                     <EnrollButton course={course.name} />
-                    <span className="text-xs text-muted-foreground">Mon–Fri · 1 Hr Live</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {region.monthlyPrice}/mo · Mon–Fri
+                    </span>
                   </div>
 
                   <div className="poster-options">
@@ -970,25 +991,26 @@ export function EnglishProgramsSection({ onlyKids = false }: { onlyKids?: boolea
 }
 
 export function SpokenSkillsSection() {
+  const { region, countryName } = useRegionPricing();
   const [selectedTierIdx, setSelectedTierIdx] = useState(0);
 
   const kidsTiers = [
     {
       label: 'Ages 4–6',
-      fee: 'Rs. 133/Day',
-      course: 'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
+      fee: `${region.monthlyPrice}/mo`,
+      course: 'Kids Spoken English Program (Ages 4–6)',
       summary: 'Playful phonics, everyday words, greetings, and early speaking confidence.',
     },
     {
       label: 'Ages 7–9',
-      fee: 'Rs. 145/Day',
-      course: 'Kids Spoken English Program (Ages 7–9 · Rs. 145/Day)',
+      fee: `${region.monthlyPrice}/mo`,
+      course: 'Kids Spoken English Program (Ages 7–9)',
       summary: 'Full-sentence speaking, storytelling games, and natural classroom interaction.',
     },
     {
       label: 'Ages 10–14',
-      fee: 'Rs. 155/Day',
-      course: 'Kids Spoken English Program (Ages 10–14 · Rs. 155/Day)',
+      fee: `${region.monthlyPrice}/mo`,
+      course: 'Kids Spoken English Program (Ages 10–14)',
       summary: 'Pronunciation clarity, group discussions, presentations, and fluent conversation.',
     },
   ];
@@ -1027,7 +1049,9 @@ export function SpokenSkillsSection() {
           </p>
         </FadeInUp>
 
-        <div className="track-grid mt-9">
+        <CountryPriceBar className="mt-7 rounded-2xl border border-white/10 bg-[#110f0f]/85 px-4 py-3.5 sm:px-5" />
+
+        <div className="track-grid mt-7">
           {speakingTracks.map((course, idx) => (
             <motion.article
               key={course.name}
@@ -1062,6 +1086,12 @@ export function SpokenSkillsSection() {
                 <span className="eyebrow">{course.duration}</span>
                 <h3>{course.name}</h3>
                 <p>{course.text}</p>
+                <div className="mt-3 mb-4 text-sm font-bold text-primary tabular-nums">
+                  {region.monthlyPrice}{' '}
+                  <span className="text-xs font-medium text-muted-foreground">
+                    / month · {countryName}
+                  </span>
+                </div>
                 <EnrollButton course={course.name} />
               </div>
             </motion.article>
@@ -1727,6 +1757,7 @@ export function StoriesSection({ tone = 'default' }: { tone?: 'default' | 'muted
 }
 
 export function GlobalClassroomSection() {
+  const { countryName, region } = useRegionPricing();
   const regions = ['Pakistan', 'UAE', 'Saudi Arabia', 'United Kingdom', 'More soon'];
 
   return (
@@ -1744,12 +1775,14 @@ export function GlobalClassroomSection() {
           <span className="eyebrow">Our global classroom</span>
           <h2 className="section-heading">Learn English from anywhere in the world.</h2>
           <p className="section-intro">
-            One friendly live classroom, welcoming learners across time zones and cultures.
+            One friendly live classroom, welcoming learners across time zones and cultures. Monthly
+            tuition for <span className="text-foreground font-semibold">{countryName}</span> is{' '}
+            <span className="text-primary font-bold tabular-nums">{region.monthlyPrice}/month</span>.
           </p>
           <div className="tags">
-            {regions.map((region) => (
-              <span key={region} className="tag">
-                {region}
+            {regions.map((item) => (
+              <span key={item} className="tag">
+                {item}
               </span>
             ))}
           </div>
@@ -1910,27 +1943,28 @@ export function ContactSection() {
 }
 
 export function KidsAgePathsSection() {
+  const { region } = useRegionPricing();
   const [selected, setSelected] = useState(0);
 
   const levels = [
     {
       name: 'Little Explorers',
-      tag: 'Ages 4–6 · Rs. 133/Day',
+      tag: `Ages 4–6 · ${region.monthlyPrice}/mo`,
       focus: 'Greetings, phonetic confidence, everyday classroom words, and playful speaking games.',
     },
     {
       name: 'Young Speakers',
-      tag: 'Ages 7–9 · Rs. 145/Day',
+      tag: `Ages 7–9 · ${region.monthlyPrice}/mo`,
       focus: 'Building full sentences, asking questions, colours, daily routines, and guided dialogue.',
     },
     {
       name: 'Smart Communicators',
-      tag: 'Ages 10–12 · Rs. 155/Day',
+      tag: `Ages 10–12 · ${region.monthlyPrice}/mo`,
       focus: 'Clear pronunciation, group discussions, vocabulary fluency, and real-world scenarios.',
     },
     {
       name: 'Young but advanced',
-      tag: 'Ages 12–14 · Rs. 155/Day',
+      tag: `Ages 12–14 · ${region.monthlyPrice}/mo`,
       focus: 'Storytelling, confident presentations, critical thinking, and expressive speaking.',
     },
   ];
@@ -1944,6 +1978,8 @@ export function KidsAgePathsSection() {
           <span className="eyebrow">Growing confidence at every age</span>
           <h2 className="section-heading">A path for every young speaker</h2>
         </FadeInUp>
+
+        <CountryPriceBar className="mt-6 rounded-2xl border border-white/10 bg-[#110f0f]/85 px-4 py-3.5 sm:px-5" />
 
         <div className="feature-grid">
           {levels.map((level, idx) => {
@@ -1973,21 +2009,21 @@ export function KidsAgePathsSection() {
                   <BookOpen size={20} />
                 </div>
                 <h3>{level.name}</h3>
-                <span className="tag mt-2">{level.tag}</span>
+                <span className="tag mt-2 tabular-nums">{level.tag}</span>
               </motion.button>
             );
           })}
         </div>
 
         <motion.div
-          key={active.name}
+          key={`${active.name}-${region.id}`}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
           className="mt-6 rounded-2xl border border-white/10 bg-card/90 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
           <div>
-            <span className="eyebrow !mb-1">{active.tag}</span>
+            <span className="eyebrow !mb-1 tabular-nums">{active.tag}</span>
             <h3 className="text-lg font-bold text-foreground">{active.name}</h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{active.focus}</p>
           </div>

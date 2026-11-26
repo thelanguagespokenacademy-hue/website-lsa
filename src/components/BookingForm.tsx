@@ -19,11 +19,14 @@ import {
   COURSE_OPTIONS,
   EMAIL_DISPLAY,
   EMAIL_URL,
+  type RegionPricing,
   WHATSAPP_DISPLAY,
   WHATSAPP_URL,
 } from '../data/siteData';
 import { useBookingModal } from '../lib/bookingContext';
+import { useRegionPricing } from '../lib/regionContext';
 import { inferInterestCategory, trackEvent } from '../lib/analytics';
+import { CountryPriceBar } from './CountryPriceBar';
 
 interface BookingFormState {
   studentName: string;
@@ -70,12 +73,20 @@ function getEffectiveEducation(form: BookingFormState): string {
   return form.education === 'Other' ? form.customEducation.trim() : form.education.trim();
 }
 
-function buildRegistrationMessage(form: BookingFormState): string {
+function buildRegistrationMessage(
+  form: BookingFormState,
+  region: RegionPricing,
+  countryName: string
+): string {
   const educationLabel = getEffectiveEducation(form);
+  const isConsultation = form.course.toLowerCase().includes('consultation');
   const lines = [
     'Assalam-o-Alaikum! I would like to register / book a Free Trial Demo Class at Language Spoken House.',
     '',
     `• Program: ${form.course}`,
+    `• Country & Monthly Fee: ${countryName} — ${
+      isConsultation ? `${region.monthlyPrice}/month (All Courses)` : `${region.monthlyPrice}/month`
+    }`,
     `• Student Name: ${form.studentName.trim()}`,
     ...(form.parentName.trim() ? [`• Parent / Guardian: ${form.parentName.trim()}`] : []),
     `• Age: ${form.age.trim()} years`,
@@ -87,14 +98,24 @@ function buildRegistrationMessage(form: BookingFormState): string {
   return lines.join('\n');
 }
 
-function buildWhatsAppUrl(form: BookingFormState): string {
-  return `${WHATSAPP_URL}?text=${encodeURIComponent(buildRegistrationMessage(form))}`;
+function buildWhatsAppUrl(
+  form: BookingFormState,
+  region: RegionPricing,
+  countryName: string
+): string {
+  return `${WHATSAPP_URL}?text=${encodeURIComponent(
+    buildRegistrationMessage(form, region, countryName)
+  )}`;
 }
 
-function buildEmailUrl(form: BookingFormState): string {
+function buildEmailUrl(
+  form: BookingFormState,
+  region: RegionPricing,
+  countryName: string
+): string {
   const subject = `Free Trial Demo Registration — ${form.studentName.trim() || 'Student'}`;
   return `${EMAIL_URL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
-    buildRegistrationMessage(form)
+    buildRegistrationMessage(form, region, countryName)
   )}`;
 }
 
@@ -135,8 +156,15 @@ export function BookingForm({
     setErrors({});
   }, [resolvedCourse]);
 
-  const whatsappHref = useMemo(() => buildWhatsAppUrl(form), [form]);
-  const emailHref = useMemo(() => buildEmailUrl(form), [form]);
+  const { region, countryName } = useRegionPricing();
+  const whatsappHref = useMemo(
+    () => buildWhatsAppUrl(form, region, countryName),
+    [form, region, countryName]
+  );
+  const emailHref = useMemo(
+    () => buildEmailUrl(form, region, countryName),
+    [form, region, countryName]
+  );
 
   const updateField = <K extends keyof BookingFormState>(field: K, value: BookingFormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -236,6 +264,12 @@ export function BookingForm({
               <div>
                 <span className="text-primary font-semibold">Program:</span> {form.course}
               </div>
+              <div>
+                <span className="text-primary font-semibold">Country &amp; Fee:</span>{' '}
+                <span className="tabular-nums text-foreground font-semibold">
+                  {countryName} · {region.monthlyPrice}/month
+                </span>
+              </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span>
                   <span className="text-primary font-semibold">Student:</span> {form.studentName}
@@ -314,6 +348,11 @@ export function BookingForm({
             noValidate
             className="space-y-3.5"
           >
+            <CountryPriceBar
+              compact
+              className="rounded-xl border border-white/10 bg-black/50 px-3.5 py-2.5"
+            />
+
             <div>
               <label
                 htmlFor="booking-course"
@@ -345,7 +384,9 @@ export function BookingForm({
                 >
                   {courseSelectOptions.map((option) => (
                     <option key={option} value={option} className="bg-[#110f0f] text-foreground">
-                      {option}
+                      {option.toLowerCase().includes('consultation')
+                        ? `${option} (${region.monthlyPrice}/mo)`
+                        : `${option} — ${region.monthlyPrice}/month`}
                     </option>
                   ))}
                 </select>

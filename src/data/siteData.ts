@@ -5,10 +5,180 @@ export const PHONE_URL = 'tel:+923483452142';
 export const EMAIL_DISPLAY = 'Rimshaofficials24@gmail.com';
 export const EMAIL_URL = `mailto:${EMAIL_DISPLAY}`;
 
+export type PricingRegionId = 'pakistan' | 'uae' | 'saudi' | 'other';
+
+export interface RegionPricing {
+  id: PricingRegionId;
+  label: string;
+  shortLabel: string;
+  monthlyPrice: string;
+  currencyCode: string;
+  perMonthText: string;
+}
+
+export const REGION_PRICING: RegionPricing[] = [
+  {
+    id: 'pakistan',
+    label: 'Pakistan',
+    shortLabel: 'Pakistan',
+    monthlyPrice: 'Rs. 3,500',
+    currencyCode: 'PKR',
+    perMonthText: 'Rs. 3,500 / month · 20 Live Classes',
+  },
+  {
+    id: 'uae',
+    label: 'UAE',
+    shortLabel: 'UAE',
+    monthlyPrice: '120 AED',
+    currencyCode: 'AED',
+    perMonthText: '120 AED / month · 20 Live Classes',
+  },
+  {
+    id: 'saudi',
+    label: 'Saudi Arabia',
+    shortLabel: 'Saudi Arabia',
+    monthlyPrice: '120 SR',
+    currencyCode: 'SAR',
+    perMonthText: '120 SR / month · 20 Live Classes',
+  },
+  {
+    id: 'other',
+    label: 'International',
+    shortLabel: 'Other',
+    monthlyPrice: '$30',
+    currencyCode: 'USD',
+    perMonthText: '$30 USD / month · 20 Live Classes',
+  },
+];
+
+export interface DetectedCountryInfo {
+  regionId: PricingRegionId;
+  countryCode: string;
+  countryName: string;
+}
+
+export function getRegionPricing(regionId: PricingRegionId): RegionPricing {
+  return REGION_PRICING.find((r) => r.id === regionId) ?? REGION_PRICING[0];
+}
+
+export function mapCountryCodeToRegion(countryCode?: string | null): PricingRegionId {
+  const code = (countryCode || '').trim().toUpperCase();
+  if (code === 'PK') return 'pakistan';
+  if (code === 'AE') return 'uae';
+  if (code === 'SA') return 'saudi';
+  return 'other';
+}
+
+export function normalizeCountryName(countryCode: string, rawName?: string | null): string {
+  const code = countryCode.trim().toUpperCase();
+  if (code === 'PK') return 'Pakistan';
+  if (code === 'AE') return 'UAE';
+  if (code === 'SA') return 'Saudi Arabia';
+  const cleaned = (rawName || '').trim();
+  if (cleaned) return cleaned;
+  if (code && /^[A-Z]{2}$/.test(code)) {
+    try {
+      const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+      return dn.of(code) || code;
+    } catch {
+      return code;
+    }
+  }
+  return 'International';
+}
+
+export function detectTimezoneFallback(): DetectedCountryInfo {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    if (tz.includes('Karachi')) {
+      return { regionId: 'pakistan', countryCode: 'PK', countryName: 'Pakistan' };
+    }
+    if (tz.includes('Dubai') || tz.includes('Abu_Dhabi')) {
+      return { regionId: 'uae', countryCode: 'AE', countryName: 'UAE' };
+    }
+    if (tz.includes('Riyadh')) {
+      return { regionId: 'saudi', countryCode: 'SA', countryName: 'Saudi Arabia' };
+    }
+    if (tz) {
+      return { regionId: 'other', countryCode: 'INTL', countryName: 'International' };
+    }
+  } catch {
+    // ignore Intl errors
+  }
+
+  return { regionId: 'pakistan', countryCode: 'PK', countryName: 'Pakistan' };
+}
+
+async function fetchJsonWithTimeout(url: string, timeoutMs = 3500): Promise<Record<string, unknown> | null> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Record<string, unknown>;
+    return data && typeof data === 'object' ? data : null;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+export async function detectNetworkCountry(): Promise<DetectedCountryInfo | null> {
+  if (typeof window === 'undefined') return null;
+
+  // Try GeoJS first (fast CORS geo-IP endpoint)
+  const geojs = await fetchJsonWithTimeout('https://get.geojs.io/v1/ip/country.json');
+  if (geojs && typeof geojs.country === 'string' && /^[A-Za-z]{2}$/.test(geojs.country)) {
+    const code = geojs.country.toUpperCase();
+    return {
+      regionId: mapCountryCodeToRegion(code),
+      countryCode: code,
+      countryName: normalizeCountryName(code, typeof geojs.name === 'string' ? geojs.name : null),
+    };
+  }
+
+  // Fallback 2: api.country.is
+  const countryIs = await fetchJsonWithTimeout('https://api.country.is/');
+  if (countryIs && typeof countryIs.country === 'string' && /^[A-Za-z]{2}$/.test(countryIs.country)) {
+    const code = countryIs.country.toUpperCase();
+    return {
+      regionId: mapCountryCodeToRegion(code),
+      countryCode: code,
+      countryName: normalizeCountryName(code, null),
+    };
+  }
+
+  // Fallback 3: ipwho.is
+  const ipwho = await fetchJsonWithTimeout('https://ipwho.is/?fields=success,country_code,country');
+  if (
+    ipwho &&
+    ipwho.success !== false &&
+    typeof ipwho.country_code === 'string' &&
+    /^[A-Za-z]{2}$/.test(ipwho.country_code)
+  ) {
+    const code = ipwho.country_code.toUpperCase();
+    return {
+      regionId: mapCountryCodeToRegion(code),
+      countryCode: code,
+      countryName: normalizeCountryName(
+        code,
+        typeof ipwho.country === 'string' ? ipwho.country : null
+      ),
+    };
+  }
+
+  return null;
+}
+
 export const COURSE_OPTIONS: string[] = [
-  'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
-  'Kids Spoken English Program (Ages 7–9 · Rs. 145/Day)',
-  'Kids Spoken English Program (Ages 10–14 · Rs. 155/Day)',
+  'Kids Spoken English Program (Ages 4–6)',
+  'Kids Spoken English Program (Ages 7–9)',
+  'Kids Spoken English Program (Ages 10–14)',
   'Kids English Speaking Course (Ages 4–14)',
   'Female English Speaking Course',
   'Teacher Communication Track',

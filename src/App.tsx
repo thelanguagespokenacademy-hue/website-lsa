@@ -1,5 +1,6 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { BookingProvider } from './lib/bookingContext';
+import { RegionProvider } from './lib/regionContext';
 import { Link, RouterProvider, usePathname } from './lib/router';
 import { BookingForm, BookingModal } from './components/BookingForm';
 import { AnalyticsTracker } from './components/AnalyticsTracker';
@@ -253,16 +254,18 @@ export default function App() {
     <ErrorBoundary>
       <MotionConfig reducedMotion="user">
         <RouterProvider>
-          <BookingProvider>
-            <AnalyticsTracker />
-            <div className="ambient-backdrop" aria-hidden="true" />
-            <SiteHeader />
-            <RouteView />
-            <MotionAndMetaEffect />
-            <SiteFooter />
-            <FloatingWhatsAppButton />
-            <BookingModal />
-          </BookingProvider>
+          <RegionProvider>
+            <BookingProvider>
+              <AnalyticsTracker />
+              <div className="ambient-backdrop" aria-hidden="true" />
+              <SiteHeader />
+              <RouteView />
+              <MotionAndMetaEffect />
+              <SiteFooter />
+              <FloatingWhatsAppButton />
+              <BookingModal />
+            </BookingProvider>
+          </RegionProvider>
         </RouterProvider>
       </MotionConfig>
     </ErrorBoundary>

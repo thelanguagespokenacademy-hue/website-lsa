@@ -15,8 +15,10 @@ import {
 } from 'lucide-react';
 import { Link, usePathname } from '../../lib/router';
 import { useBookingModal } from '../../lib/bookingContext';
+import { useRegionPricing } from '../../lib/regionContext';
 import { inferInterestCategory, trackEvent } from '../../lib/analytics';
 import { ASSETS } from '../../data/siteData';
+import { CountryPriceBar } from '../CountryPriceBar';
 
 interface NavDrawerProps {
   open: boolean;
@@ -281,35 +283,30 @@ export function ImageDialog({ preview, onClose, onPrev, onNext }: ImageDialogPro
 
 const WELCOME_SESSION_KEY = 'lsh_welcome_modal_dismissed';
 
-const FEE_OPTIONS = [
+const AGE_TIERS = [
   {
     id: 'ages-4-6',
     label: 'AGES 4 TO 6',
     title: 'Ages 4 to 6',
-    price: 'Rs. 133/Day',
-    sub: '20 Classes · Rs. 2,660',
-    courseOption: 'Kids Spoken English Program (Ages 4–6 · Rs. 133/Day)',
+    courseOption: 'Kids Spoken English Program (Ages 4–6)',
   },
   {
     id: 'ages-7-9',
     label: 'AGES 7 TO 9',
     title: 'Ages 7 to 9',
-    price: 'Rs. 145/Day',
-    sub: '20 Classes · Rs. 2,900',
-    courseOption: 'Kids Spoken English Program (Ages 7–9 · Rs. 145/Day)',
+    courseOption: 'Kids Spoken English Program (Ages 7–9)',
   },
   {
     id: 'ages-10-14',
     label: 'AGES 10 TO 14',
     title: 'Ages 10 to 14',
-    price: 'Rs. 155/Day',
-    sub: '20 Classes · Rs. 3,100',
-    courseOption: 'Kids Spoken English Program (Ages 10–14 · Rs. 155/Day)',
+    courseOption: 'Kids Spoken English Program (Ages 10–14)',
   },
 ] as const;
 
 export function WelcomeDemoModal() {
   const { openBookingModal } = useBookingModal();
+  const { region, countryName } = useRegionPricing();
   const [open, setOpen] = useState<boolean>(() => {
     try {
       return sessionStorage.getItem(WELCOME_SESSION_KEY) !== '1';
@@ -317,7 +314,7 @@ export function WelcomeDemoModal() {
       return true;
     }
   });
-  const [selectedId, setSelectedId] = useState<(typeof FEE_OPTIONS)[number]['id']>('ages-4-6');
+  const [selectedId, setSelectedId] = useState<(typeof AGE_TIERS)[number]['id']>('ages-4-6');
   const [posterExpanded, setPosterExpanded] = useState(false);
 
   const handleClose = () => {
@@ -355,14 +352,15 @@ export function WelcomeDemoModal() {
     };
   }, [open]);
 
-  const activeTier = FEE_OPTIONS.find((item) => item.id === selectedId) ?? FEE_OPTIONS[0];
+  const activeTier = AGE_TIERS.find((item) => item.id === selectedId) ?? AGE_TIERS[0];
   const handleBookDemoClick = () => {
     trackEvent({
       eventType: 'button_click',
       eventName: 'welcome_modal_book_demo',
-      label: `Book Free Demo (${activeTier.title})`,
+      label: `Book Free Demo (${activeTier.title} · ${region.monthlyPrice})`,
       interestCategory: 'kids_program',
       course: activeTier.courseOption,
+      metadata: region.label,
     });
     setOpen(false);
     try {
@@ -461,11 +459,16 @@ export function WelcomeDemoModal() {
               </button>
             </div>
 
+            <CountryPriceBar
+              compact
+              className="mt-3.5 rounded-xl border border-white/10 bg-black/50 px-3.5 py-2.5"
+            />
+
             <p className="text-[11px] font-medium text-muted-foreground text-center mt-3">
               Select your child’s age group:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 mt-2">
-              {FEE_OPTIONS.map((opt) => {
+              {AGE_TIERS.map((opt) => {
                 const isSelected = opt.id === selectedId;
                 return (
                   <button
@@ -476,7 +479,7 @@ export function WelcomeDemoModal() {
                       trackEvent({
                         eventType: 'tab_select',
                         eventName: `select_welcome_tier_${opt.id}`,
-                        label: `${opt.title} (${opt.price})`,
+                        label: `${opt.title} (${region.monthlyPrice}/mo)`,
                         interestCategory: 'kids_program',
                         course: opt.courseOption,
                       });
@@ -494,10 +497,10 @@ export function WelcomeDemoModal() {
                       <span>{opt.label}</span>
                     </div>
                     <div className="text-sm font-bold text-foreground mt-0.5 tabular-nums">
-                      {opt.price}
+                      {region.monthlyPrice} / mo
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
-                      {opt.sub}
+                      20 Classes · {countryName}
                     </div>
                   </button>
                 );
@@ -536,7 +539,7 @@ export function WelcomeDemoModal() {
 
             <p className="text-center text-[11px] text-muted-foreground mt-3 tabular-nums">
               Selected: <span className="text-primary font-semibold">{activeTier.title}</span> ·{' '}
-              {activeTier.price} · 1 Day Free Trial Class
+              {region.monthlyPrice}/month ({countryName}) · 1 Day Free Trial Class
             </p>
           </motion.div>
         </div>
